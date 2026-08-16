@@ -158,7 +158,7 @@ parse_payload() {
 		_tag="${FORGEJO_PR_NUMBER}-${FORGEJO_REF}"
 		_ref="${FORGEJO_PR_NUMBER}-${FORGEJO_REF}"
 
-		_title="${FORGEJO_PR_TITLE}"
+		_title="Pull request #${FORGEJO_PR_NUMBER}: ${FORGEJO_PR_TITLE}"
 		;;
 	tag)
 		FORGEJO_REF=$(jq -r '.tag' $PAYLOAD_JSON)
