@@ -11,6 +11,11 @@ on:
         description: 'Development mode (disables update checker)'
         type: string
         required: true
+      payload:
+        description: 'Forgejo event payload JSON string'
+        type: string
+        required: false
+        default: ''
 
 env:
   DISABLE_ARM: ${{ vars.DISABLE_ARM }}
@@ -40,8 +45,14 @@ jobs:
           fetch-depth: 0
 
       - name: Parse Forgejo payload
+        env:
+          INPUT_PAYLOAD: ${{ inputs.payload }}
         run: |
-          echo '${{ toJSON(github.event.client_payload) }}' > ./payload.json
+          if [ -n "$INPUT_PAYLOAD" ]; then
+            echo "$INPUT_PAYLOAD" > ./payload.json
+          else
+            echo '${{ toJSON(github.event.client_payload) }}' > ./payload.json
+          fi
           jq . payload.json
           ./.ci/fj/payload.sh --parse ${{ inputs.build-id }}
 
