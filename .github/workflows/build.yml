@@ -22,6 +22,8 @@ env:
   BUILD_ID: ${{ inputs.build-id }}
   TEMP_PATCH_NUMBER: ""
   FORCE_PGO: "false"
+  DISABLE_PGO: ${{ inputs.build-id == 'pull_request' && 'true' || 'false' }}
+  DISABLE_AMD: ${{ inputs.build-id == 'pull_request' && 'true' || 'false' }}
 
 jobs:
   clone:
@@ -132,7 +134,7 @@ jobs:
         run: ./.ci/build/source.sh
 
   deb:
-    if: ${{ inputs.build-id == 'pull_request' || inputs.build-id == 'test' }}
+    if: ${{ inputs.build-id == 'test' }}
     name: Debian
     needs: [clone]
     uses: ./.github/workflows/debian.yml

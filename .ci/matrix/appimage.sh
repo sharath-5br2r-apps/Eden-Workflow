@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 use_extra() {
-	[ "$DEVEL" != "true" ] || [ "$FORCE_PGO" = "true" ]
+	[ "$DISABLE_PGO" != "true" ] && [ "$DISABLE_AMD" != "true" ] && { [ "$DEVEL" != "true" ] || [ "$FORCE_PGO" = "true" ]; }
 }
 
 ## Architectures ##

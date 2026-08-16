@@ -33,7 +33,7 @@ arm_clang="$(target "$ARM64" "$CLANG")"
 arm_pgo="$(target "$ARM64" "$PGO")"
 
 MATRIX="[${amd_gcc}, ${arm_clang}"
-if [ "$DEVEL" != "true" ] || [ "${FORCE_PGO}" = "true" ]; then
+if [ "$DISABLE_PGO" != "true" ] && [ "$DISABLE_AMD" != "true" ] && { [ "$DEVEL" != "true" ] || [ "${FORCE_PGO}" = "true" ]; }; then
 	MATRIX="$MATRIX, ${amd_pgo}, ${ally_gcc}, ${ally_pgo}, ${arm_pgo}"
 fi
 

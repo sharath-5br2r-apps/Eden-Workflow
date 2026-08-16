@@ -1,29 +1,144 @@
 name: "[Auto] Forgejo Pull Request"
 
 on:
-  repository_dispatch:
-    types: [pull_request]
+  schedule:
+    - cron: '0 1/2 * * *'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Specific PR number to build (optional)'
+        type: string
+        required: false
+
+concurrency:
+  group: sync-forgejo-pr
+  cancel-in-progress: false
 
 env:
   DISABLE_ARM: ${{ vars.DISABLE_ARM }}
   FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
 
 jobs:
+  check:
+    name: Check Forgejo PR
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.latest.outputs.pr_number }}
+      pr_sha: ${{ steps.latest.outputs.pr_sha }}
+      should_run: ${{ steps.check.outputs.should_run }}
+      payload: ${{ steps.latest.outputs.payload }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine latest open Forgejo PR
+        id: latest
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          INPUT_PR="${{ inputs.pr_number }}"
+
+          python3 -c "
+          import urllib.request, json, os, sys
+
+          host = 'git.eden-emu.dev'
+          repo = 'eden-emu/eden'
+          token = os.getenv('FORGEJO_TOKEN')
+          input_pr = '$INPUT_PR'
+
+          headers = {}
+          if token:
+              headers['Authorization'] = f'token {token}'
+
+          if input_pr and input_pr.isdigit():
+              url = f'https://{host}/api/v1/repos/{repo}/pulls/{input_pr}'
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req) as resp:
+                  pr = json.loads(resp.read().decode())
+          else:
+              url = f'https://{host}/api/v1/repos/{repo}/pulls?state=open&sort=recentupdate'
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req) as resp:
+                  prs = json.loads(resp.read().decode())
+                  if not prs:
+                      print('No open PRs found')
+                      sys.exit(0)
+                  pr = prs[0]
+
+          pr_number = pr['number']
+          head_sha = pr['head']['sha']
+          head_ref = pr['head']['ref']
+          clone_url = pr.get('head', {}).get('repo', {}).get('clone_url') or f'https://{host}/{repo}.git'
+          html_url = pr['html_url']
+
+          payload = {
+              'host': host,
+              'repository': repo,
+              'clone_url': clone_url,
+              'branch': head_ref,
+              'ref': head_sha,
+              'number': pr_number,
+              'url': html_url
+          }
+
+          payload_json = json.dumps(payload)
+
+          with open(os.getenv('GITHUB_OUTPUT'), 'a') as f:
+              f.write(f'pr_number={pr_number}\n')
+              f.write(f'pr_sha={head_sha[:10]}\n')
+              f.write(f'payload={payload_json}\n')
+
+          print(f'Latest Forgejo PR number: {pr_number} (sha: {head_sha[:10]})')
+          "
+
+      - name: Check if already synced
+        id: check
+        run: |
+          PR_NUM="${{ steps.latest.outputs.pr_number }}"
+          PR_SHA="${{ steps.latest.outputs.pr_sha }}"
+
+          if [ -z "$PR_NUM" ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "No open PRs found to process"
+            exit 0
+          fi
+
+          TAG="pr-${PR_NUM}-${PR_SHA}"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Triggered via workflow_dispatch; forcing run for $TAG"
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --tags "https://github.com/${{ github.repository }}.git" \
+              "refs/tags/sync/$TAG" >/dev/null 2>&1; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "$TAG already synced, nothing to do"
+            exit 0
+          fi
+
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+          echo "$TAG is new, running full sync!"
+
   build:
     name: Build
+    needs: check
+    if: ${{ needs.check.outputs.should_run == 'true' }}
     concurrency:
-      group: pull_request-${{ github.event.client_payload.number }}
+      group: pull_request-${{ needs.check.outputs.pr_number }}
       cancel-in-progress: true
     uses: ./.github/workflows/build.yml
     with:
-      devel: true
+      devel: false
       build-id: 'pull_request'
     secrets: inherit
 
   release:
     name: "Create Release"
-    needs: [build]
-    if: ${{ always() }}
+    needs: [check, build]
+    if: ${{ always() && needs.check.outputs.should_run == 'true' }}
     permissions:
       actions: read
       security-events: write
@@ -31,7 +146,25 @@ jobs:
       discussions: write
     uses: ./.github/workflows/release.yml
     with:
-      devel: true
+      devel: false
       build-id: 'pull_request'
       status: ${{ needs.build.result }}
     secrets: inherit
+
+  tag_sync:
+    name: "Tag Sync Marker"
+    needs: [check, build, release]
+    if: always() && needs.check.outputs.should_run == 'true' && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Tag sync marker
+        continue-on-error: true
+        run: |
+          TAG="pr-${{ needs.check.outputs.pr_number }}-${{ needs.check.outputs.pr_sha }}"
+          git tag "sync/$TAG"
+          git push origin "sync/$TAG"
