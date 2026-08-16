@@ -118,10 +118,12 @@ linux_field() {
 		file_link "zsync" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage.zsync"
 		printf ") | "
 
-		file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
-		printf " ("
-		file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
-		printf ")"
+		if [ "$target" = "amd64" ] || [ "$target" = "x86_64" ] || [ "$target" = "aarch64" ] || [ "$target" = "arm64" ]; then
+			file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
+			printf " ("
+			file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
+			printf ")"
+		fi
 	fi
 
 	echo " | $notes |"
@@ -174,7 +176,9 @@ win_field() {
 	printf " | "
 
 	if opts; then
-		file_link "PGO zip" "eden-windows-pgo-clang-v${SHORT_SHA}-${arch}.zip"
+		if [ "$target" = "amd64" ] || [ "$target" = "x86_64" ] || [ "$target" = "arm64" ] || [ "$target" = "aarch64" ]; then
+			file_link "PGO zip" "eden-windows-pgo-clang-v${SHORT_SHA}-${arch}.zip"
+		fi
 	fi
 
 	echo " | $notes |"
