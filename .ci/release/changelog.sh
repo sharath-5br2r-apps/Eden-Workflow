@@ -52,23 +52,23 @@ push | test)
 esac
 echo
 
+SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+
 tagged() {
 	falsy "$devel"
 }
 
 # create a link
 # $1: the label
-# $2: the artifact suffix (e.g. PROJECT-Linux-amd64... would just pass in Linux-amd64...)
-# $3: optional prefix (defaults to PROJECT_PRETTYNAME)
+# $2: the artifact filename
 file_link() {
 	label="$1"
-	artifact="$2"
-	prefix="${3:-$PROJECT_PRETTYNAME}"
+	filename="$2"
 
 	if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
-		url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$prefix-$artifact"
+		url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$filename"
 	else
-		url="./$prefix-$artifact"
+		url="./$filename"
 	fi
 
 	printf "[%s](%s)" "$label" "$url"
@@ -81,28 +81,46 @@ android() {
 	flavor="$2"
 	notes="$3"
 
+	if [ "$flavor" = "chromeos" ]; then
+		arch="x86_64"
+	else
+		arch="arm64-v8a"
+	fi
+
+	filename="eden-android-${flavor}-v${SHORT_SHA}-${arch}.apk"
 	printf "| "
-	file_link "$type" "Android-${ARTIFACT_REF}-${flavor}.apk"
+	file_link "$type" "$filename"
 	echo " | $notes |"
 }
 
 linux_field() {
-	arch="$1"
+	variant="$1"
 	pretty_arch="$2"
 	notes="${3}"
 
+	if [ "$variant" = "aarch64" ] || [ "$variant" = "arm64" ]; then
+		arch="arm64-v8a"
+		var="standard"
+	elif [ "$variant" = "amd64" ] || [ "$variant" = "x86_64" ]; then
+		arch="x86_64"
+		var="standard"
+	else
+		arch="x86_64"
+		var="$variant"
+	fi
+
 	printf "| %s | " "$pretty_arch"
-	file_link "Standard AppImage" "Linux-${ARTIFACT_REF}-${arch}-gcc-standard.AppImage"
+	file_link "Standard AppImage" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage"
 
 	if tagged; then
 		printf " ("
-		file_link "zsync" "Linux-${arch}-gcc-standard.AppImage.zsync"
+		file_link "zsync" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage.zsync"
 		printf ") | "
 
 		if opts; then
-			file_link "PGO AppImage" "Linux-${ARTIFACT_REF}-${arch}-clang-pgo.AppImage"
+			file_link "PGO AppImage" "eden-linux-pgo-v${SHORT_SHA}-${arch}.AppImage"
 			printf " ("
-			file_link "zsync" "Linux-${arch}-clang-pgo.AppImage.zsync"
+			file_link "zsync" "eden-linux-pgo-v${SHORT_SHA}-${arch}.AppImage.zsync"
 			printf ")"
 		fi
 	fi
@@ -111,25 +129,24 @@ linux_field() {
 }
 
 linux_matrix() {
-	linux_field amd64 "amd64"
+	linux_field amd64 "x86_64"
 	if tagged && opts; then
-		linux_field legacy "Legacy amd64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
+		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
 		linux_field rog-ally "Zen 4" "Zen 4 (AMD Z1/Z2, ROG Ally X, Legion Go S)"
 	fi
 
-	falsy "$DISABLE_ARM" && linux_field aarch64 "ARM (aarch64)"
+	falsy "$DISABLE_ARM" && linux_field aarch64 "ARM (arm64-v8a)"
 }
 
 room_matrix() {
-	for arch in aarch64 x86_64; do
-		echo "- $(file_link "$arch" "room-${arch}-unknown-linux-musl" "eden")"
-	done
+	echo "- $(file_link "x86_64" "eden-linux-room-v${SHORT_SHA}-x86_64")"
+	echo "- $(file_link "arm64-v8a" "eden-linux-room-v${SHORT_SHA}-arm64-v8a")"
 }
 
 msvc_field() {
-	printf "| amd64/x86_64 (MSVC) | "
-	file_link "MSVC zip" "Windows-${ARTIFACT_REF}-amd64-msvc-standard.zip"
+	printf "| x86_64 (MSVC) | "
+	file_link "MSVC zip" "eden-windows-msvc-v${SHORT_SHA}-x86_64.zip"
 	if tagged && opts; then
 		printf " | "
 	fi
@@ -138,22 +155,27 @@ msvc_field() {
 }
 
 win_field() {
-	arch="$1"
+	variant="$1"
 	pretty_arch="$2"
 	notes="$3"
 
-	if [ "$arch" = arm64 ]; then
-		compiler=clang
+	if [ "$variant" = "arm64" ] || [ "$variant" = "aarch64" ]; then
+		arch="arm64-v8a"
+		var="standard"
+	elif [ "$variant" = "amd64" ] || [ "$variant" = "x86_64" ]; then
+		arch="x86_64"
+		var="standard"
 	else
-		compiler=gcc
+		arch="x86_64"
+		var="$variant"
 	fi
 
 	printf "| %s | " "$pretty_arch"
-	file_link "Standard zip" "Windows-${ARTIFACT_REF}-${arch}-${compiler}-standard.zip"
+	file_link "Standard zip" "eden-windows-${var}-v${SHORT_SHA}-${arch}.zip"
 	printf " | "
 
 	if tagged && opts; then
-		file_link "PGO zip" "Windows-${ARTIFACT_REF}-${arch}-clang-pgo.zip"
+		file_link "PGO zip" "eden-windows-pgo-v${SHORT_SHA}-${arch}.zip"
 	fi
 
 	echo " | $notes |"
@@ -161,13 +183,13 @@ win_field() {
 
 win_matrix() {
 	msvc_field
-	win_field amd64 "amd64/x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
+	win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
 
 	if tagged || truthy "${FORCE_PGO}"; then
 		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
 	fi
 
-	win_field arm64 "aarch64/arm64" "Snapdragon devices"
+	win_field arm64 "arm64-v8a" "Snapdragon devices"
 }
 
 echo "# Packages"
@@ -179,8 +201,8 @@ if truthy "$EXPLAIN_TARGETS"; then
 
 		Each build is optimized for a specific architecture and uses a specific compiler.
 
-		- **aarch64/arm64**: For devices that use the armv8-a instruction set; e.g. Snapdragon X, all Android devices, and Apple Silicon Macs.
-		- **amd64**: For devices that use the amd64 (aka x86_64) instruction set; this is exclusively used by Intel and AMD CPUs and is only found on desktops.
+		- **arm64-v8a**: For devices that use the armv8-a instruction set; e.g. Snapdragon X, all Android devices, and Apple Silicon Macs.
+		- **x86_64**: For devices that use the x86_64 instruction set; this is exclusively used by Intel and AMD CPUs and is only found on desktops.
 		- **v3**: For devices that use the x86_64-v3 instruction set or newer; this is found on Ryzen, Intel 4th Generation (Haswell), and newer.
 
 		### PGO
@@ -277,7 +299,7 @@ In order to run the app, you *may* need to go to System Settings -> Privacy & Se
 EOF
 
 printf -- "- "
-file_link "macOS DMG" "macOS-${ARTIFACT_REF}.dmg"
+file_link "macOS DMG" "eden-macos-standard-v${SHORT_SHA}-universal.dmg"
 echo
 
 if tagged; then

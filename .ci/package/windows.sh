@@ -75,8 +75,23 @@ if [ "$PLATFORM" = "msys" ] && [ "$STATIC" != "ON" ]; then
 	find ./*/ -name "*.dll" | while read -r dll; do deps "$dll"; done
 fi
 
-# ?ploo
-ZIP_NAME="${PROJECT_PRETTYNAME}-Windows-${ARTIFACT_REF}-${ARCH}.zip"
+SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+case "$ARCH" in
+	arm64|aarch64) ARCH_NAME="arm64-v8a" ;;
+	*) ARCH_NAME="x86_64" ;;
+esac
+
+if [ "$PGO_TARGET" = "pgo" ]; then
+	VARIANT="pgo"
+elif [ "$PLATFORM" = "msvc" ] || [ "$MSYSTEM" = "msvc" ] || [ "$TARGET" = "msvc" ]; then
+	VARIANT="msvc"
+elif [ "$ARCH" = "rog-ally" ] || [ "$TARGET" = "rog-ally" ]; then
+	VARIANT="rog-ally"
+else
+	VARIANT="standard"
+fi
+
+ZIP_NAME="eden-windows-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.zip"
 
 cp -r ./* "$TMP_DIR"/
 cp -r "$ROOTDIR"/LICENSE* "$ROOTDIR"/README* "$TMP_DIR"/

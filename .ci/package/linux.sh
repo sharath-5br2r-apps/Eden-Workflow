@@ -27,11 +27,24 @@ if [ "$DEVEL" != "true" ]; then
 	ADD_HOOKS="$ADD_HOOKS:self-updater.hook"
 fi
 
-export ADD_HOOKS
-export OUTPATH="$ARTIFACTS_DIR"
-export OUTNAME="${PROJECT_PRETTYNAME}-Linux-${ARTIFACT_REF}-${FULL_ARCH}.AppImage"
+SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+case "$TARGET" in
+	aarch64|arm64) ARCH_NAME="arm64-v8a" ;;
+	*) ARCH_NAME="x86_64" ;;
+esac
 
-_zsync="${PROJECT_PRETTYNAME}-Linux-${FULL_ARCH}.AppImage.zsync"
+if [ "$PGO_TARGET" = "pgo" ]; then
+	VARIANT="pgo"
+elif [ "$TARGET" = "legacy" ] || [ "$TARGET" = "steamdeck" ] || [ "$TARGET" = "rog-ally" ]; then
+	VARIANT="$TARGET"
+else
+	VARIANT="standard"
+fi
+
+export OUTPATH="$ARTIFACTS_DIR"
+export OUTNAME="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage"
+
+_zsync="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage.zsync"
 
 # Thanks, Microsoft.
 # TODO(crueter): Proper fj/b2 handling.

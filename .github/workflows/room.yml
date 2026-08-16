@@ -48,8 +48,14 @@ jobs:
 
               mkdir -p artifacts
 
+              SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+              if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+                ARCH_NAME="arm64-v8a"
+              else
+                ARCH_NAME="x86_64"
+              fi
               src=build/bin/eden-room
-              dst=artifacts/"eden-room-$ARCH-unknown-linux-musl"
+              dst=artifacts/"eden-linux-room-v${SHORT_SHA}-${ARCH_NAME}"
               mv "$src" "$dst"
 
               strip "$dst"

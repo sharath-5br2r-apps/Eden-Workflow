@@ -121,7 +121,14 @@ fi
 
 cd "$ARTIFACTS_DIR"
 
-mv ./*.apk "${PROJECT_PRETTYNAME}-Android-${ARTIFACT_REF}-${TARGET_LOWER}.apk"
+SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+if [ "$TARGET_LOWER" = "chromeos" ]; then
+	ARCH_NAME="x86_64"
+else
+	ARCH_NAME="arm64-v8a"
+fi
+
+mv ./*.apk "${ARTIFACTS_DIR}/eden-android-${TARGET_LOWER}-v${SHORT_SHA}-${ARCH_NAME}.apk"
 
 cd "$ROOTDIR"
 

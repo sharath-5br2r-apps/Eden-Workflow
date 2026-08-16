@@ -32,9 +32,8 @@ done
 
 codesign --deep --force --verbose --sign - "$APPDIR/$APP"
 rm -rf "$APPDIR"/send-presence.app
-mkdir -p "$ARTIFACTS_DIR"
-
-artifact_base="${ARTIFACTS_DIR}/${PROJECT_PRETTYNAME}-macOS-${ARTIFACT_REF}"
+SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+artifact_base="${ARTIFACTS_DIR}/eden-macos-standard-v${SHORT_SHA}-universal"
 
 case "$FORMAT" in
     dmg)
