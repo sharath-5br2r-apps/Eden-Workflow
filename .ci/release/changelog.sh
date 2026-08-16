@@ -100,13 +100,13 @@ linux_field() {
 
 	if [ "$variant" = "aarch64" ] || [ "$variant" = "arm64" ]; then
 		arch="arm64-v8a"
-		var="standard"
+		var="standard-gcc"
 	elif [ "$variant" = "amd64" ] || [ "$variant" = "x86_64" ]; then
 		arch="x86_64"
-		var="standard"
+		var="standard-gcc"
 	else
 		arch="x86_64"
-		var="$variant"
+		var="${variant}-gcc"
 	fi
 
 	printf "| %s | " "$pretty_arch"
@@ -118,9 +118,9 @@ linux_field() {
 		printf ") | "
 
 		if opts; then
-			file_link "PGO AppImage" "eden-linux-pgo-v${SHORT_SHA}-${arch}.AppImage"
+			file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
 			printf " ("
-			file_link "zsync" "eden-linux-pgo-v${SHORT_SHA}-${arch}.AppImage.zsync"
+			file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
 			printf ")"
 		fi
 	fi
@@ -146,7 +146,7 @@ room_matrix() {
 
 msvc_field() {
 	printf "| x86_64 (MSVC) | "
-	file_link "MSVC zip" "eden-windows-msvc-v${SHORT_SHA}-x86_64.zip"
+	file_link "MSVC zip" "eden-windows-standard-msvc-v${SHORT_SHA}-x86_64.zip"
 	if tagged && opts; then
 		printf " | "
 	fi
@@ -161,13 +161,13 @@ win_field() {
 
 	if [ "$variant" = "arm64" ] || [ "$variant" = "aarch64" ]; then
 		arch="arm64-v8a"
-		var="standard"
+		var="standard-clang"
 	elif [ "$variant" = "amd64" ] || [ "$variant" = "x86_64" ]; then
 		arch="x86_64"
-		var="standard"
+		var="standard-gcc"
 	else
 		arch="x86_64"
-		var="$variant"
+		var="${variant}-gcc"
 	fi
 
 	printf "| %s | " "$pretty_arch"
@@ -175,7 +175,7 @@ win_field() {
 	printf " | "
 
 	if tagged && opts; then
-		file_link "PGO zip" "eden-windows-pgo-v${SHORT_SHA}-${arch}.zip"
+		file_link "PGO zip" "eden-windows-pgo-clang-v${SHORT_SHA}-${arch}.zip"
 	fi
 
 	echo " | $notes |"

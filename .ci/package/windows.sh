@@ -81,14 +81,16 @@ case "$ARCH" in
 	*) ARCH_NAME="x86_64" ;;
 esac
 
-if [ "$PGO_TARGET" = "pgo" ]; then
-	VARIANT="pgo"
-elif [ "$PLATFORM" = "msvc" ] || [ "$MSYSTEM" = "msvc" ] || [ "$TARGET" = "msvc" ]; then
-	VARIANT="msvc"
+if [ "$PLATFORM" = "msvc" ] || [ "$MSYSTEM" = "msvc" ] || [ "$TARGET" = "msvc" ]; then
+	VARIANT="standard-msvc"
+elif [ "$PGO_TARGET" = "pgo" ] || [ "$TARGET" = "pgo" ]; then
+	VARIANT="pgo-clang"
 elif [ "$ARCH" = "rog-ally" ] || [ "$TARGET" = "rog-ally" ]; then
-	VARIANT="rog-ally"
+	VARIANT="rog-ally-gcc"
+elif [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+	VARIANT="standard-clang"
 else
-	VARIANT="standard"
+	VARIANT="standard-gcc"
 fi
 
 ZIP_NAME="eden-windows-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.zip"

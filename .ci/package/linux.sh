@@ -33,12 +33,13 @@ case "$TARGET" in
 	*) ARCH_NAME="x86_64" ;;
 esac
 
+COMPILER_NAME="${COMPILER:-gcc}"
 if [ "$PGO_TARGET" = "pgo" ]; then
-	VARIANT="pgo"
+	VARIANT="pgo-${COMPILER_NAME}"
 elif [ "$TARGET" = "legacy" ] || [ "$TARGET" = "steamdeck" ] || [ "$TARGET" = "rog-ally" ]; then
-	VARIANT="$TARGET"
+	VARIANT="${TARGET}-${COMPILER_NAME}"
 else
-	VARIANT="standard"
+	VARIANT="standard-${COMPILER_NAME}"
 fi
 
 mkdir -p "$ARTIFACTS_DIR"
