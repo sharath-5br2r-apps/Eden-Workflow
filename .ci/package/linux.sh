@@ -41,6 +41,7 @@ else
 	VARIANT="standard"
 fi
 
+mkdir -p "$ARTIFACTS_DIR"
 export OUTPATH="$ARTIFACTS_DIR"
 export OUTNAME="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage"
 

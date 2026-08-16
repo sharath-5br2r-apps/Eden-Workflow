@@ -119,6 +119,7 @@ if [ -n "${ANDROID_KEYSTORE_B64}" ]; then
     rm "${ANDROID_KEYSTORE_FILE}"
 fi
 
+mkdir -p "$ARTIFACTS_DIR"
 cd "$ARTIFACTS_DIR"
 
 SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
