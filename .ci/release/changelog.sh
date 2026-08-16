@@ -305,7 +305,7 @@ printf -- "- "
 file_link "macOS DMG" "eden-macos-v${SHORT_SHA}-universal.dmg"
 echo
 
-if tagged; then
+if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
 	cat <<-EOF
 
 		## Torrent
