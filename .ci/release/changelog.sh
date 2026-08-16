@@ -56,7 +56,7 @@ echo
 SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
 
 tagged() {
-	falsy "$devel" || [ "$1" = "pull_request" ] || [ "$BUILD_ID" = "pull_request" ]
+	falsy "$devel"
 }
 
 # create a link
