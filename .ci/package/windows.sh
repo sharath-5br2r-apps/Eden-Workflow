@@ -76,23 +76,37 @@ if [ "$PLATFORM" = "msys" ] && [ "$STATIC" != "ON" ]; then
 fi
 
 SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
-case "$ARCH" in
+
+case "$TARGET" in
 	arm64|aarch64) ARCH_NAME="arm64-v8a" ;;
-	*) ARCH_NAME="x86_64" ;;
+	amd64|x86_64) ARCH_NAME="x86_64" ;;
+	*)
+		case "$ARCH" in
+			*arm64*|*aarch64*) ARCH_NAME="arm64-v8a" ;;
+			*) ARCH_NAME="x86_64" ;;
+		esac
+		;;
 esac
 
 if [ "$PLATFORM" = "msvc" ] || [ "$MSYSTEM" = "msvc" ] || [ "$TARGET" = "msvc" ]; then
-	VARIANT="standard-msvc"
-elif [ "$PGO_TARGET" = "pgo" ] || [ "$TARGET" = "pgo" ]; then
-	VARIANT="pgo-clang"
-elif [ "$ARCH" = "rog-ally" ] || [ "$TARGET" = "rog-ally" ]; then
-	VARIANT="rog-ally-gcc"
-elif [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-	VARIANT="standard-clang"
+	COMPILER_NAME="msvc"
+elif [ -n "$COMPILER" ]; then
+	COMPILER_NAME="$COMPILER"
+elif case "$ARCH" in *clang*) true ;; *) false ;; esac; then
+	COMPILER_NAME="clang"
 else
-	VARIANT="standard-gcc"
+	COMPILER_NAME="gcc"
 fi
 
+if [ "$PGO_TARGET" = "pgo" ] || case "$ARCH" in *pgo*) true ;; *) false ;; esac; then
+	TARGET_NAME="pgo"
+elif [ "$TARGET" = "rog-ally" ] || case "$ARCH" in *rog-ally*) true ;; *) false ;; esac; then
+	TARGET_NAME="rog-ally"
+else
+	TARGET_NAME="standard"
+fi
+
+VARIANT="${TARGET_NAME}-${COMPILER_NAME}"
 ZIP_NAME="eden-windows-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.zip"
 
 cp -r ./* "$TMP_DIR"/
