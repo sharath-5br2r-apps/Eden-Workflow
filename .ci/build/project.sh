@@ -9,8 +9,11 @@
 PROJECT_PRETTYNAME=Eden
 PROJECT_REPO=eden
 
-# Is your project desktop only?
+# Is your project desktop only or platform restricted?
 DISABLE_ANDROID=OFF
+DISABLE_LINUX=OFF
+DISABLE_WINDOWS=OFF
+DISABLE_MACOS=OFF
 
 # Does your project need optimized (e.g. PGO, Zen 2, etc) builds?
 DISABLE_OPTS=OFF
@@ -25,6 +28,9 @@ export PROJECT_PRETTYNAME
 export PROJECT_REPO
 
 export DISABLE_ANDROID
+export DISABLE_LINUX
+export DISABLE_WINDOWS
+export DISABLE_MACOS
 export DISABLE_OPTS
 export DISABLE_MINGW
 

@@ -214,45 +214,48 @@ if truthy "$EXPLAIN_TARGETS"; then
 	EOF
 fi
 
-cat <<EOF
+if falsy "$DISABLE_LINUX"; then
+	cat <<EOF
 
 ## Linux
 
 Linux packages are distributed via AppImage.
 EOF
 
-if opts; then
-	cat <<-EOF
-		[zsync](https://zsync.moria.org.uk/) files are provided for easier updating, such as via
-		[AM](https://github.com/ivan-hc/AM).
+	if opts; then
+		cat <<-EOF
+			[zsync](https://zsync.moria.org.uk/) files are provided for easier updating, such as via
+			[AM](https://github.com/ivan-hc/AM).
 
-		| Build Type | Standard | PGO (Recommended) | Notes |
-		|------------|----------|-----------|-------|
-	EOF
-else
-	cat <<-EOF
+			| Build Type | Standard | PGO (Recommended) | Notes |
+			|------------|----------|-----------|-------|
+		EOF
+	else
+		cat <<-EOF
 
-		| Build Type |  | Notes |
-		|------------|--|-------|
-	EOF
+			| Build Type |  | Notes |
+			|------------|--|-------|
+		EOF
+	fi
+
+	linux_matrix
+
+	if [ "$1" = "tag" ]; then
+		cat <<-EOF
+
+			### Room Executables
+
+			These are statically linked Linux executables for the \`eden-room\` binary.
+
+		EOF
+
+		room_matrix
+	fi
 fi
 
-linux_matrix
-
-if [ "$1" = "tag" ]; then
-	cat <<-EOF
-
-		### Room Executables
-
-		These are statically linked Linux executables for the \`eden-room\` binary.
-
-	EOF
-
-	room_matrix
-fi
-
-# TODO: setup files
-cat <<EOF
+if falsy "$DISABLE_WINDOWS"; then
+	# TODO: setup files
+	cat <<EOF
 
 ## Windows
 
@@ -260,20 +263,21 @@ Windows packages are in-place zip files. Setup files are soon to come.
 
 EOF
 
-if opts; then
-	cat <<-EOF
-		| Build Type | Standard | PGO (Recommended) | Notes |
-		|------------|----------|-------------------|-------|
-	EOF
-else
-	cat <<-EOF
+	if opts; then
+		cat <<-EOF
+			| Build Type | Standard | PGO (Recommended) | Notes |
+			|------------|----------|-------------------|-------|
+		EOF
+	else
+		cat <<-EOF
 
-		| Build Type |  | Notes |
-		|------------|--|-------|
-	EOF
+			| Build Type |  | Notes |
+			|------------|--|-------|
+		EOF
+	fi
+
+	win_matrix
 fi
-
-win_matrix
 
 if falsy "$DISABLE_ANDROID"; then
 	cat <<-EOF
@@ -292,7 +296,8 @@ if falsy "$DISABLE_ANDROID"; then
 	fi
 fi
 
-cat <<EOF
+if falsy "$DISABLE_MACOS"; then
+	cat <<EOF
 
 ## macOS
 
@@ -301,9 +306,10 @@ In order to run the app, you *may* need to go to System Settings -> Privacy & Se
 
 EOF
 
-printf -- "- "
-file_link "macOS DMG" "eden-macos-v${SHORT_SHA}-universal.dmg"
-echo
+	printf -- "- "
+	file_link "macOS DMG" "eden-macos-v${SHORT_SHA}-universal.dmg"
+	echo
+fi
 
 if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
 	cat <<-EOF
