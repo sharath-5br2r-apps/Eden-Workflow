@@ -27,7 +27,7 @@ env:
   BUILD_ID: ${{ inputs.build-id }}
   TEMP_PATCH_NUMBER: ""
   FORCE_PGO: "false"
-  DISABLE_PGO: ${{ inputs.build-id == 'pull_request' && 'true' || 'false' }}
+  DISABLE_PGO: "false"
   DISABLE_AMD: ${{ inputs.build-id == 'pull_request' && 'true' || 'false' }}
 
 jobs:

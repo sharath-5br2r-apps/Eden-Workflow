@@ -32,9 +32,23 @@ ally_pgo="$(target "$ALLY" "$PGO")"
 arm_clang="$(target "$ARM64" "$CLANG")"
 arm_pgo="$(target "$ARM64" "$PGO")"
 
+use_amd() {
+	[ "$DISABLE_AMD" != "true" ] && { [ "$DEVEL" != "true" ] || [ "${FORCE_PGO}" = "true" ]; }
+}
+
+use_pgo() {
+	[ "$DISABLE_PGO" != "true" ] && { [ "$DEVEL" != "true" ] || [ "${FORCE_PGO}" = "true" ]; }
+}
+
 MATRIX="[${amd_gcc}, ${arm_clang}"
-if [ "$DISABLE_PGO" != "true" ] && [ "$DISABLE_AMD" != "true" ] && { [ "$DEVEL" != "true" ] || [ "${FORCE_PGO}" = "true" ]; }; then
-	MATRIX="$MATRIX, ${amd_pgo}, ${ally_gcc}, ${ally_pgo}, ${arm_pgo}"
+if use_pgo; then
+	MATRIX="$MATRIX, ${amd_pgo}, ${arm_pgo}"
+fi
+if use_amd; then
+	MATRIX="$MATRIX, ${ally_gcc}"
+	if use_pgo; then
+		MATRIX="$MATRIX, ${ally_pgo}"
+	fi
 fi
 
 MATRIX="$MATRIX]"

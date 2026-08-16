@@ -1,7 +1,11 @@
 #!/bin/sh -e
 
-use_extra() {
-	[ "$DISABLE_PGO" != "true" ] && [ "$DISABLE_AMD" != "true" ] && { [ "$DEVEL" != "true" ] || [ "$FORCE_PGO" = "true" ]; }
+use_amd() {
+	[ "$DISABLE_AMD" != "true" ] && { [ "$DEVEL" != "true" ] || [ "$FORCE_PGO" = "true" ]; }
+}
+
+use_pgo() {
+	[ "$DISABLE_PGO" != "true" ] && { [ "$DEVEL" != "true" ] || [ "$FORCE_PGO" = "true" ]; }
 }
 
 ## Architectures ##
@@ -19,7 +23,7 @@ steam=$(arch ubuntu-latest steamdeck)
 ally=$(arch ubuntu-latest rog-ally)
 
 arches="[$amd, $arm"
-if use_extra; then
+if use_amd; then
 	arches="$arches, $legacy, $steam, $ally"
 fi
 arches="$arches]"
@@ -40,7 +44,7 @@ pgo=$(compiler clang pgo)
 
 compilers="[$gcc"
 
-if use_extra; then
+if use_pgo; then
 	compilers="$compilers, $pgo"
 fi
 
