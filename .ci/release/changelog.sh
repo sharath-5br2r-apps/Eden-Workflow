@@ -130,7 +130,7 @@ linux_field() {
 }
 
 linux_matrix() {
-	falsy "$DISABLE_AMD" && linux_field amd64 "x86_64"
+	linux_field amd64 "x86_64"
 	if tagged && opts; then
 		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
@@ -186,7 +186,7 @@ win_field() {
 
 win_matrix() {
 	msvc_field
-	falsy "$DISABLE_AMD" && win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
+	win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
 
 	if tagged || truthy "${FORCE_PGO}"; then
 		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
