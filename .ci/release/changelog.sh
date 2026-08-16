@@ -12,6 +12,10 @@ opts() {
 	falsy "$DISABLE_OPTS" && falsy "$DISABLE_PGO"
 }
 
+use_amd() {
+	falsy "$DISABLE_AMD" && { tagged || truthy "${FORCE_PGO}"; }
+}
+
 devel=true
 
 # FIXME(crueter)
@@ -131,7 +135,7 @@ linux_field() {
 
 linux_matrix() {
 	linux_field amd64 "x86_64"
-	if tagged && opts; then
+	if use_amd && opts; then
 		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
 		linux_field rog-ally "Zen 4" "Zen 4 (AMD Z1/Z2, ROG Ally X, Legion Go S)"
@@ -188,7 +192,7 @@ win_matrix() {
 	msvc_field
 	win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
 
-	if tagged || truthy "${FORCE_PGO}"; then
+	if use_amd; then
 		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
 	fi
 
