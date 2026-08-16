@@ -9,7 +9,7 @@ ROOTDIR="$PWD"
 . ./.ci/build/project.sh
 
 opts() {
-	falsy "$DISABLE_OPTS"
+	falsy "$DISABLE_OPTS" && falsy "$DISABLE_PGO"
 }
 
 devel=true
@@ -130,7 +130,7 @@ linux_field() {
 }
 
 linux_matrix() {
-	linux_field amd64 "x86_64"
+	falsy "$DISABLE_AMD" && linux_field amd64 "x86_64"
 	if opts; then
 		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
@@ -142,7 +142,7 @@ linux_matrix() {
 
 room_matrix() {
 	echo "- $(file_link "x86_64" "eden-linux-room-v${SHORT_SHA}-x86_64")"
-	echo "- $(file_link "arm64-v8a" "eden-linux-room-v${SHORT_SHA}-arm64-v8a")"
+	falsy "$DISABLE_ARM" && echo "- $(file_link "arm64-v8a" "eden-linux-room-v${SHORT_SHA}-arm64-v8a")"
 }
 
 msvc_field() {
@@ -186,13 +186,13 @@ win_field() {
 
 win_matrix() {
 	msvc_field
-	win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
+	falsy "$DISABLE_AMD" && win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
 
 	if opts || truthy "${FORCE_PGO}"; then
 		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
 	fi
 
-	win_field arm64 "arm64-v8a" "Snapdragon devices"
+	falsy "$DISABLE_ARM" && win_field arm64 "arm64-v8a" "Snapdragon devices"
 }
 
 echo "# Packages"
