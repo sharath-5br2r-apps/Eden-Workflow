@@ -129,7 +129,7 @@ else
 	ARCH_NAME="arm64-v8a"
 fi
 
-mv ./*.apk "${ARTIFACTS_DIR}/eden-android-v${SHORT_SHA}-${ARCH_NAME}-${TARGET_LOWER}.apk"
+mv ./*.apk "${ARTIFACTS_DIR}/eden-android-${TARGET_LOWER}-v${SHORT_SHA}-${ARCH_NAME}.apk"
 
 cd "$ROOTDIR"
 

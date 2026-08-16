@@ -33,15 +33,22 @@ TARGET_NAME="${PGO_TARGET:-standard}"
 
 case "$TARGET" in
 	aarch64|arm64) ARCH_NAME="arm64-v8a" ;;
-	amd64|x86_64) ARCH_NAME="x86_64" ;;
-	*) ARCH_NAME="$TARGET" ;;
+	*) ARCH_NAME="x86_64" ;;
 esac
+
+if [ "$TARGET_NAME" = "pgo" ]; then
+	VARIANT="pgo-${COMPILER_NAME}"
+elif [ "$TARGET" = "legacy" ] || [ "$TARGET" = "steamdeck" ] || [ "$TARGET" = "rog-ally" ]; then
+	VARIANT="${TARGET}-${COMPILER_NAME}"
+else
+	VARIANT="standard-${COMPILER_NAME}"
+fi
 
 mkdir -p "$ARTIFACTS_DIR"
 export OUTPATH="$ARTIFACTS_DIR"
-export OUTNAME="eden-linux-v${SHORT_SHA}-${ARCH_NAME}-${COMPILER_NAME}-${TARGET_NAME}.AppImage"
+export OUTNAME="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage"
 
-_zsync="eden-linux-v${SHORT_SHA}-${ARCH_NAME}-${COMPILER_NAME}-${TARGET_NAME}.AppImage.zsync"
+_zsync="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage.zsync"
 
 # Thanks, Microsoft.
 # TODO(crueter): Proper fj/b2 handling.
