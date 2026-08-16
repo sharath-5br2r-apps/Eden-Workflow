@@ -1,9 +1,6 @@
 name: "[Auto] Nightly Builds"
 
 on:
-  schedule:
-    # every day at 6 pm
-    - cron: "0 18 * * *"
   workflow_dispatch:
 
 env:

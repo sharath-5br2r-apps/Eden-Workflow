@@ -1,9 +1,6 @@
 name: "[Manual] Workflow PR"
 
 on:
-  pull_request:
-    branches:
-      - '*'
   workflow_dispatch:
 
 env:
