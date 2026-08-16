@@ -76,24 +76,23 @@ if [ "$PLATFORM" = "msys" ] && [ "$STATIC" != "ON" ]; then
 fi
 
 SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
-case "$ARCH" in
-	arm64|aarch64) ARCH_NAME="arm64-v8a" ;;
-	*) ARCH_NAME="x86_64" ;;
-esac
-
 if [ "$PLATFORM" = "msvc" ] || [ "$MSYSTEM" = "msvc" ] || [ "$TARGET" = "msvc" ]; then
-	VARIANT="standard-msvc"
+	FULL_ARCH_VARIANT="x86_64-msvc-standard"
 elif [ "$PGO_TARGET" = "pgo" ] || [ "$TARGET" = "pgo" ]; then
-	VARIANT="pgo-clang"
+	if [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+		FULL_ARCH_VARIANT="arm64-v8a-clang-pgo"
+	else
+		FULL_ARCH_VARIANT="x86_64-clang-pgo"
+	fi
 elif [ "$ARCH" = "rog-ally" ] || [ "$TARGET" = "rog-ally" ]; then
-	VARIANT="rog-ally-gcc"
+	FULL_ARCH_VARIANT="rog-ally-gcc-standard"
 elif [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
-	VARIANT="standard-clang"
+	FULL_ARCH_VARIANT="arm64-v8a-clang-standard"
 else
-	VARIANT="standard-gcc"
+	FULL_ARCH_VARIANT="x86_64-gcc-standard"
 fi
 
-ZIP_NAME="eden-windows-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.zip"
+ZIP_NAME="eden-windows-v${SHORT_SHA}-${FULL_ARCH_VARIANT}.zip"
 
 cp -r ./* "$TMP_DIR"/
 cp -r "$ROOTDIR"/LICENSE* "$ROOTDIR"/README* "$TMP_DIR"/

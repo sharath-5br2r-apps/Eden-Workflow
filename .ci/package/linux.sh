@@ -28,25 +28,20 @@ if [ "$DEVEL" != "true" ]; then
 fi
 
 SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
+COMPILER_NAME="${COMPILER:-gcc}"
+TARGET_NAME="${PGO_TARGET:-standard}"
+
 case "$TARGET" in
 	aarch64|arm64) ARCH_NAME="arm64-v8a" ;;
-	*) ARCH_NAME="x86_64" ;;
+	amd64|x86_64) ARCH_NAME="x86_64" ;;
+	*) ARCH_NAME="$TARGET" ;;
 esac
-
-COMPILER_NAME="${COMPILER:-gcc}"
-if [ "$PGO_TARGET" = "pgo" ]; then
-	VARIANT="pgo-${COMPILER_NAME}"
-elif [ "$TARGET" = "legacy" ] || [ "$TARGET" = "steamdeck" ] || [ "$TARGET" = "rog-ally" ]; then
-	VARIANT="${TARGET}-${COMPILER_NAME}"
-else
-	VARIANT="standard-${COMPILER_NAME}"
-fi
 
 mkdir -p "$ARTIFACTS_DIR"
 export OUTPATH="$ARTIFACTS_DIR"
-export OUTNAME="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage"
+export OUTNAME="eden-linux-v${SHORT_SHA}-${ARCH_NAME}-${COMPILER_NAME}-${TARGET_NAME}.AppImage"
 
-_zsync="eden-linux-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.AppImage.zsync"
+_zsync="eden-linux-v${SHORT_SHA}-${ARCH_NAME}-${COMPILER_NAME}-${TARGET_NAME}.AppImage.zsync"
 
 # Thanks, Microsoft.
 # TODO(crueter): Proper fj/b2 handling.

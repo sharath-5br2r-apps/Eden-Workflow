@@ -87,40 +87,40 @@ android() {
 		arch="arm64-v8a"
 	fi
 
-	filename="eden-android-${flavor}-v${SHORT_SHA}-${arch}.apk"
+	filename="eden-android-v${SHORT_SHA}-${arch}-${flavor}.apk"
 	printf "| "
 	file_link "$type" "$filename"
 	echo " | $notes |"
 }
 
 linux_field() {
-	variant="$1"
+	target="$1"
 	pretty_arch="$2"
 	notes="${3}"
 
-	if [ "$variant" = "aarch64" ] || [ "$variant" = "arm64" ]; then
-		arch="arm64-v8a"
-		var="standard-gcc"
-	elif [ "$variant" = "amd64" ] || [ "$variant" = "x86_64" ]; then
-		arch="x86_64"
-		var="standard-gcc"
+	if [ "$target" = "aarch64" ] || [ "$target" = "arm64" ]; then
+		arch_target="arm64-v8a-gcc-standard"
+		pgo_target="arm64-v8a-clang-pgo"
+	elif [ "$target" = "amd64" ] || [ "$target" = "x86_64" ]; then
+		arch_target="x86_64-gcc-standard"
+		pgo_target="x86_64-clang-pgo"
 	else
-		arch="x86_64"
-		var="${variant}-gcc"
+		arch_target="${target}-gcc-standard"
+		pgo_target="${target}-clang-pgo"
 	fi
 
 	printf "| %s | " "$pretty_arch"
-	file_link "Standard AppImage" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage"
+	file_link "Standard AppImage" "eden-linux-v${SHORT_SHA}-${arch_target}.AppImage"
 
 	if tagged; then
 		printf " ("
-		file_link "zsync" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage.zsync"
+		file_link "zsync" "eden-linux-v${SHORT_SHA}-${arch_target}.AppImage.zsync"
 		printf ") | "
 
 		if opts; then
-			file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
+			file_link "PGO AppImage" "eden-linux-v${SHORT_SHA}-${pgo_target}.AppImage"
 			printf " ("
-			file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
+			file_link "zsync" "eden-linux-v${SHORT_SHA}-${pgo_target}.AppImage.zsync"
 			printf ")"
 		fi
 	fi
@@ -146,7 +146,7 @@ room_matrix() {
 
 msvc_field() {
 	printf "| x86_64 (MSVC) | "
-	file_link "MSVC zip" "eden-windows-standard-msvc-v${SHORT_SHA}-x86_64.zip"
+	file_link "MSVC zip" "eden-windows-v${SHORT_SHA}-x86_64-msvc-standard.zip"
 	if tagged && opts; then
 		printf " | "
 	fi
@@ -155,27 +155,27 @@ msvc_field() {
 }
 
 win_field() {
-	variant="$1"
+	target="$1"
 	pretty_arch="$2"
 	notes="$3"
 
-	if [ "$variant" = "arm64" ] || [ "$variant" = "aarch64" ]; then
-		arch="arm64-v8a"
-		var="standard-clang"
-	elif [ "$variant" = "amd64" ] || [ "$variant" = "x86_64" ]; then
-		arch="x86_64"
-		var="standard-gcc"
+	if [ "$target" = "arm64" ] || [ "$target" = "aarch64" ]; then
+		arch_target="arm64-v8a-clang-standard"
+		pgo_target="arm64-v8a-clang-pgo"
+	elif [ "$target" = "amd64" ] || [ "$target" = "x86_64" ]; then
+		arch_target="x86_64-gcc-standard"
+		pgo_target="x86_64-clang-pgo"
 	else
-		arch="x86_64"
-		var="${variant}-gcc"
+		arch_target="${target}-gcc-standard"
+		pgo_target="${target}-clang-pgo"
 	fi
 
 	printf "| %s | " "$pretty_arch"
-	file_link "Standard zip" "eden-windows-${var}-v${SHORT_SHA}-${arch}.zip"
+	file_link "Standard zip" "eden-windows-v${SHORT_SHA}-${arch_target}.zip"
 	printf " | "
 
 	if tagged && opts; then
-		file_link "PGO zip" "eden-windows-pgo-clang-v${SHORT_SHA}-${arch}.zip"
+		file_link "PGO zip" "eden-windows-v${SHORT_SHA}-${pgo_target}.zip"
 	fi
 
 	echo " | $notes |"
@@ -299,7 +299,7 @@ In order to run the app, you *may* need to go to System Settings -> Privacy & Se
 EOF
 
 printf -- "- "
-file_link "macOS DMG" "eden-macos-standard-v${SHORT_SHA}-universal.dmg"
+file_link "macOS DMG" "eden-macos-v${SHORT_SHA}-universal.dmg"
 echo
 
 if tagged; then
