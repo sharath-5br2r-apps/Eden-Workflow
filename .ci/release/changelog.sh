@@ -72,6 +72,8 @@ file_link() {
 
 	if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
 		url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$filename"
+	elif [ -n "$RELEASE_REPO" ] && [ -n "$GITHUB_TAG" ]; then
+		url="https://github.com/$RELEASE_REPO/releases/download/$GITHUB_TAG/$filename"
 	else
 		url="./$filename"
 	fi
