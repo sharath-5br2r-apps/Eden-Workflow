@@ -52,22 +52,7 @@ push | test)
 esac
 echo
 
-if command -v gh >/dev/null 2>&1 && [ -n "${GITHUB_REPOSITORY:-}" ]; then
-	GH_LATEST_TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || true)
-	if [ -n "$GH_LATEST_TAG" ] && [ -z "${GITHUB_TAG:-}" ]; then
-		GITHUB_TAG="$GH_LATEST_TAG"
-	fi
-fi
-
-if [ -z "${SHORT_SHA:-}" ] || [ "${SHORT_SHA:-}" = "head" ]; then
-	if git rev-parse --short=10 HEAD >/dev/null 2>&1; then
-		SHORT_SHA=$(git rev-parse --short=10 HEAD)
-	elif [ -n "${GITHUB_SHA:-}" ]; then
-		SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-10)
-	else
-		SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
-	fi
-fi
+SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
 
 tagged() {
 	falsy "$devel"
