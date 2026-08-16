@@ -75,7 +75,7 @@ echo "-- Generating AppImage... --"
 
 if [ "$DEVEL" = 'true' ]; then
     rm -f "$OUTPATH/$OUTNAME.zsync"
-else
+elif [ "$OUTPATH/$OUTNAME.zsync" != "$OUTPATH/${_zsync}" ]; then
     mv "$OUTPATH/$OUTNAME.zsync" "$OUTPATH/${_zsync}"
 fi
 
