@@ -295,6 +295,9 @@ if falsy "$DISABLE_ANDROID"; then
 	if tagged; then
 		android "Genshin Spoof APK" "optimized" "Spoofs Eden as Genshin Impact, which may enable optimizations/frame generation on some flagship devices."
 		android "Legacy APK" "legacy" "For Snapdragon 865 and other unsupported chipsets"
+		android "ChromeOS APK" "chromeos" "For Chromebooks and x86_64 Android devices"
+	elif [ "$1" = "pull_request" ] || [ "$BUILD_ID" = "pull_request" ]; then
+		android "ChromeOS APK" "chromeos" "For Chromebooks and x86_64 Android devices"
 	fi
 fi
 
