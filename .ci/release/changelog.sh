@@ -31,6 +31,7 @@ pull_request)
 	echo
 	echo "## Changelog"
 	python3 .ci/field.py field="body" default_msg="No changelog provided" pull_request_number="$FORGEJO_PR_NUMBER"
+	devel=false
 	;;
 tag)
 	echo "## Changelog"
@@ -112,17 +113,15 @@ linux_field() {
 	printf "| %s | " "$pretty_arch"
 	file_link "Standard AppImage" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage"
 
-	if tagged; then
+	if opts; then
 		printf " ("
 		file_link "zsync" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage.zsync"
 		printf ") | "
 
-		if opts; then
-			file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
-			printf " ("
-			file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
-			printf ")"
-		fi
+		file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
+		printf " ("
+		file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
+		printf ")"
 	fi
 
 	echo " | $notes |"
@@ -130,7 +129,7 @@ linux_field() {
 
 linux_matrix() {
 	linux_field amd64 "x86_64"
-	if tagged && opts; then
+	if opts; then
 		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
 		linux_field rog-ally "Zen 4" "Zen 4 (AMD Z1/Z2, ROG Ally X, Legion Go S)"
@@ -147,7 +146,7 @@ room_matrix() {
 msvc_field() {
 	printf "| x86_64 (MSVC) | "
 	file_link "MSVC zip" "eden-windows-standard-msvc-v${SHORT_SHA}-x86_64.zip"
-	if tagged && opts; then
+	if opts; then
 		printf " | "
 	fi
 
@@ -174,7 +173,7 @@ win_field() {
 	file_link "Standard zip" "eden-windows-${var}-v${SHORT_SHA}-${arch}.zip"
 	printf " | "
 
-	if tagged && opts; then
+	if opts; then
 		file_link "PGO zip" "eden-windows-pgo-clang-v${SHORT_SHA}-${arch}.zip"
 	fi
 
@@ -185,7 +184,7 @@ win_matrix() {
 	msvc_field
 	win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
 
-	if tagged || truthy "${FORCE_PGO}"; then
+	if opts || truthy "${FORCE_PGO}"; then
 		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
 	fi
 
@@ -218,7 +217,7 @@ cat <<EOF
 Linux packages are distributed via AppImage.
 EOF
 
-if opts && tagged; then
+if opts; then
 	cat <<-EOF
 		[zsync](https://zsync.moria.org.uk/) files are provided for easier updating, such as via
 		[AM](https://github.com/ivan-hc/AM).
@@ -257,7 +256,7 @@ Windows packages are in-place zip files. Setup files are soon to come.
 
 EOF
 
-if opts && tagged; then
+if opts; then
 	cat <<-EOF
 		| Build Type | Standard | PGO (Recommended) | Notes |
 		|------------|----------|-------------------|-------|
@@ -283,7 +282,7 @@ if falsy "$DISABLE_ANDROID"; then
 
 	android "Standard APK" "standard" "The standard build. Most users should use this."
 
-	if tagged; then
+	if opts; then
 		android "Genshin Spoof APK" "optimized" "Spoofs Eden as Genshin Impact, which may enable optimizations/frame generation on some flagship devices."
 		android "Legacy APK" "legacy" "For Snapdragon 865 and other unsupported chipsets"
 	fi
