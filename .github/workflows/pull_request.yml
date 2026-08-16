@@ -32,7 +32,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Determine latest open Forgejo PR
+      - name: Determine latest merged Forgejo PR
         id: latest
         env:
           FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
@@ -57,17 +57,18 @@ jobs:
               with urllib.request.urlopen(req) as resp:
                   pr = json.loads(resp.read().decode())
           else:
-              url = f'https://{host}/api/v1/repos/{repo}/pulls?state=open&sort=recentupdate'
+              url = f'https://{host}/api/v1/repos/{repo}/pulls?state=closed&sort=recentupdate&limit=50'
               req = urllib.request.Request(url, headers=headers)
               with urllib.request.urlopen(req) as resp:
                   prs = json.loads(resp.read().decode())
-                  if not prs:
-                      print('No open PRs found')
+                  merged_prs = [p for p in prs if p.get('merged') or p.get('merged_at')]
+                  if not merged_prs:
+                      print('No merged PRs found')
                       sys.exit(0)
-                  pr = prs[0]
+                  pr = sorted(merged_prs, key=lambda x: x.get('merged_at') or '')[-1]
 
           pr_number = pr['number']
-          head_sha = pr['head']['sha']
+          head_sha = pr.get('merge_commit_sha') or pr['head']['sha']
           head_ref = pr['head']['ref']
           clone_url = pr.get('head', {}).get('repo', {}).get('clone_url') or f'https://{host}/{repo}.git'
           html_url = pr['html_url']
@@ -89,7 +90,7 @@ jobs:
               f.write(f'pr_sha={head_sha[:10]}\n')
               f.write(f'payload={payload_json}\n')
 
-          print(f'Latest Forgejo PR number: {pr_number} (sha: {head_sha[:10]})')
+          print(f'Latest merged Forgejo PR number: {pr_number} (sha: {head_sha[:10]})')
           "
 
       - name: Check if already synced
@@ -100,7 +101,7 @@ jobs:
 
           if [ -z "$PR_NUM" ]; then
             echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "No open PRs found to process"
+            echo "No merged PRs found to process"
             exit 0
           fi
 
