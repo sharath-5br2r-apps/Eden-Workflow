@@ -131,7 +131,7 @@ linux_field() {
 
 linux_matrix() {
 	falsy "$DISABLE_AMD" && linux_field amd64 "x86_64"
-	if opts; then
+	if tagged && opts; then
 		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
 		linux_field rog-ally "Zen 4" "Zen 4 (AMD Z1/Z2, ROG Ally X, Legion Go S)"
@@ -188,7 +188,7 @@ win_matrix() {
 	msvc_field
 	falsy "$DISABLE_AMD" && win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
 
-	if opts || truthy "${FORCE_PGO}"; then
+	if tagged || truthy "${FORCE_PGO}"; then
 		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
 	fi
 
@@ -221,7 +221,7 @@ cat <<EOF
 Linux packages are distributed via AppImage.
 EOF
 
-if opts; then
+if opts && tagged; then
 	cat <<-EOF
 		[zsync](https://zsync.moria.org.uk/) files are provided for easier updating, such as via
 		[AM](https://github.com/ivan-hc/AM).
@@ -260,7 +260,7 @@ Windows packages are in-place zip files. Setup files are soon to come.
 
 EOF
 
-if opts; then
+if opts && tagged; then
 	cat <<-EOF
 		| Build Type | Standard | PGO (Recommended) | Notes |
 		|------------|----------|-------------------|-------|
@@ -286,7 +286,7 @@ if falsy "$DISABLE_ANDROID"; then
 
 	android "Standard APK" "standard" "The standard build. Most users should use this."
 
-	if opts; then
+	if tagged; then
 		android "Genshin Spoof APK" "optimized" "Spoofs Eden as Genshin Impact, which may enable optimizations/frame generation on some flagship devices."
 		android "Legacy APK" "legacy" "For Snapdragon 865 and other unsupported chipsets"
 	fi
