@@ -65,8 +65,11 @@ file_link() {
 	artifact="$2"
 	prefix="${3:-$PROJECT_PRETTYNAME}"
 
-	# TODO(crueter): Make this detect gh/b2
-	url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$prefix-$artifact"
+	if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
+		url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$prefix-$artifact"
+	else
+		url="./$prefix-$artifact"
+	fi
 
 	printf "[%s](%s)" "$label" "$url"
 }

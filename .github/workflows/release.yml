@@ -80,24 +80,26 @@ jobs:
       #     files: |
       #       artifacts/*
 
-      - name: Release
+      - name: Release Script
         id: release
         if: ${{ always() }}
         run: ./.ci/release.sh
 
-      # - name: Release (PR Number)
-      #   if: ${{ env.RELEASE_PR == '1' }}
-      #   uses: softprops/action-gh-release@v2.5.0
-      #   with:
-      #     name: "${{ env.GITHUB_TITLE }}"
-      #     tag_name: ${{ env.FORGEJO_PR_NUMBER }}
-      #     repository: ${{ env.RELEASE_REPO }}
-      #     body_path: ./changelog.md
-      #     prerelease: false
-      #     draft: false
-      #     generate_release_notes: false
-      #     token: ${{ env.GH_TOKEN }}
-      #     make_latest: true
+      - name: Release to GitHub Repository
+        id: release_gh
+        if: ${{ always() && inputs.status == 'success' }}
+        uses: softprops/action-gh-release@v2.5.0
+        with:
+          name: "${{ env.GITHUB_TITLE }}"
+          tag_name: ${{ env.GITHUB_TAG }}
+          body_path: ./changelog.md
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          draft: ${{ inputs.build-id == 'tag' }}
+          generate_release_notes: false
+          make_latest: true
+          files: |
+            artifacts/*
 
       - name: Upload changelog
         if: ${{ always() }}

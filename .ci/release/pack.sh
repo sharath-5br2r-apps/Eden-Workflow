@@ -27,9 +27,9 @@ find "$ROOTDIR" \( \
 		-name '*.dmg' \
     \) -not -path "*artifacts*" -exec cp {} "$ARTIFACTS_DIR" \;
 
-if [ "$DEVEL" = false ]; then
+if [ "$DEVEL" = false ] && [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
 	if command -v apt-get >/dev/null 2>&1; then
-		sudo apt-get install -y mktorrent
+		sudo apt-get install -y mktorrent || true
 	fi
 	files_dir="${PROJECT_PRETTYNAME}-${GITHUB_TAG}"
 	ln -sf "$ARTIFACTS_DIR" "${files_dir}"
@@ -39,7 +39,7 @@ if [ "$DEVEL" = false ]; then
 		-o "$ARTIFACTS_DIR/${PROJECT_PRETTYNAME}-${ARTIFACT_REF}.torrent" \
 		-n "${GITHUB_TAG}" \
 		-l 20 \
-		"${files_dir}/"
+		"${files_dir}/" || true
 fi
 
 ls -lh "$ARTIFACTS_DIR"
