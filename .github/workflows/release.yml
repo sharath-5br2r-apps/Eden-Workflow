@@ -139,18 +139,21 @@ jobs:
                           print(f"zip inspection failed: {e}")
 
               entry_key = filename.lower()
-              build_json[entry_key] = {
+              meta_item = {
                   "name": filename,
                   "arch": arch,
                   "ext": ext,
                   "version": os.environ.get("GITHUB_TAG", "latest"),
-                  "min_sdk": min_sdk,
-                  "densities": densities,
-                  "native_libraries": native_libraries,
                   "patches": "eden-emulator",
                   "changelog": changelog,
                   "applied_patches": []
               }
+              if ext.lower() in ["apk", "apks", "xapk", "apkm"]:
+                  meta_item["min_sdk"] = min_sdk
+                  meta_item["densities"] = densities
+                  meta_item["native_libraries"] = native_libraries
+
+              build_json[entry_key] = meta_item
 
           with open("build.json", "w") as f:
               json.dump(build_json, f, indent=2)
