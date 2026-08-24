@@ -85,6 +85,49 @@ jobs:
         if: ${{ always() }}
         run: ./.ci/release.sh
 
+      - name: Generate build.json
+        if: ${{ always() && inputs.status == 'success' }}
+        run: |
+          python3 -c '
+          import os, json, glob
+
+          build_json = {}
+          artifacts = glob.glob("artifacts/*")
+          changelog = open("changelog.md").read() if os.path.exists("changelog.md") else ""
+          applied_patches = [
+              "Eden Android & PC CI Automated Workflow Build",
+              "CurseForge / Custom Mod Integration Features",
+              "Eden Emulator Master Engine Performance Improvements"
+          ]
+
+          for art in artifacts:
+              if not os.path.isfile(art):
+                  continue
+              filename = os.path.basename(art)
+              ext = filename.split(".")[-1] if "." in filename else "bin"
+              arch = "universal"
+              if "arm64" in filename.lower():
+                  arch = "arm64-v8a"
+              elif "x86_64" in filename.lower() or "amd64" in filename.lower():
+                  arch = "x86_64"
+
+              entry_key = filename.lower()
+              build_json[entry_key] = {
+                  "name": filename,
+                  "arch": arch,
+                  "ext": ext,
+                  "version": os.environ.get("GITHUB_TAG", "latest"),
+                  "min_sdk": "24",
+                  "patches": "eden-emulator",
+                  "changelog": changelog,
+                  "applied_patches": applied_patches
+              }
+
+          with open("build.json", "w") as f:
+              json.dump(build_json, f, indent=2)
+          '
+          cp build.json artifacts/build.json || true
+
       - name: Release to GitHub Repository
         id: release_gh
         if: ${{ always() && inputs.status == 'success' }}
