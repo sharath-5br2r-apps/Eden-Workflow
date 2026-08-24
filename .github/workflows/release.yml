@@ -94,12 +94,6 @@ jobs:
           build_json = {}
           artifacts = glob.glob("artifacts/*")
           changelog = open("changelog.md").read() if os.path.exists("changelog.md") else ""
-          applied_patches = [
-              "Eden Android & PC CI Automated Workflow Build",
-              "CurseForge / Custom Mod Integration Features",
-              "Eden Emulator Master Engine Performance Improvements"
-          ]
-
           for art in artifacts:
               if not os.path.isfile(art):
                   continue
@@ -120,7 +114,7 @@ jobs:
                   "min_sdk": "24",
                   "patches": "eden-emulator",
                   "changelog": changelog,
-                  "applied_patches": applied_patches
+                  "applied_patches": []
               }
 
           with open("build.json", "w") as f:
