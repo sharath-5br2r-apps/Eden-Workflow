@@ -69,14 +69,7 @@ tagged() {
 file_link() {
 	label="$1"
 	filename="$2"
-
-	if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
-		url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$filename"
-	elif [ -n "$RELEASE_REPO" ] && [ -n "$GITHUB_TAG" ]; then
-		url="https://github.com/$RELEASE_REPO/releases/download/$GITHUB_TAG/$filename"
-	else
-		url="./$filename"
-	fi
+	url="./$filename"
 
 	printf "[%s](%s)" "$label" "$url"
 }
@@ -106,13 +99,13 @@ linux_field() {
 	notes="${3}"
 
 	if [ "$target" = "aarch64" ] || [ "$target" = "arm64" ]; then
-		arch="arm64-v8a"
+		arch="aarch64"
 		var="standard-gcc"
 	elif [ "$target" = "amd64" ] || [ "$target" = "x86_64" ]; then
-		arch="x86_64"
+		arch="amd64"
 		var="standard-gcc"
 	else
-		arch="x86_64"
+		arch="amd64"
 		var="${target}-gcc"
 	fi
 
@@ -136,24 +129,24 @@ linux_field() {
 }
 
 linux_matrix() {
-	linux_field amd64 "x86_64"
+	linux_field amd64 "amd64"
 	if use_amd && opts; then
-		linux_field legacy "Legacy x86_64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
+		linux_field legacy "Legacy amd64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
 		linux_field steamdeck "Steam Deck" "Zen 2"
 		linux_field rog-ally "Zen 4" "Zen 4 (AMD Z1/Z2, ROG Ally X, Legion Go S)"
 	fi
 
-	falsy "$DISABLE_ARM" && linux_field aarch64 "ARM (arm64-v8a)"
+	falsy "$DISABLE_ARM" && linux_field aarch64 "ARM (aarch64)"
 }
 
 room_matrix() {
-	echo "- $(file_link "x86_64" "eden-linux-room-v${SHORT_SHA}-x86_64")"
-	falsy "$DISABLE_ARM" && echo "- $(file_link "arm64-v8a" "eden-linux-room-v${SHORT_SHA}-arm64-v8a")"
+	echo "- $(file_link "amd64" "eden-linux-room-v${SHORT_SHA}-amd64")"
+	falsy "$DISABLE_ARM" && echo "- $(file_link "aarch64" "eden-linux-room-v${SHORT_SHA}-aarch64")"
 }
 
 msvc_field() {
-	printf "| x86_64 (MSVC) | "
-	file_link "MSVC zip" "eden-windows-standard-msvc-v${SHORT_SHA}-x86_64.zip"
+	printf "| amd64 (MSVC) | "
+	file_link "MSVC zip" "eden-windows-standard-msvc-v${SHORT_SHA}-amd64.zip"
 	if opts; then
 		printf " | "
 	fi
@@ -167,13 +160,13 @@ win_field() {
 	notes="$3"
 
 	if [ "$target" = "arm64" ] || [ "$target" = "aarch64" ]; then
-		arch="arm64-v8a"
+		arch="aarch64"
 		var="standard-clang"
 	elif [ "$target" = "amd64" ] || [ "$target" = "x86_64" ]; then
-		arch="x86_64"
+		arch="amd64"
 		var="standard-gcc"
 	else
-		arch="x86_64"
+		arch="amd64"
 		var="${target}-gcc"
 	fi
 

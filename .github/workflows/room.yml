@@ -50,9 +50,9 @@ jobs:
 
               SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
               if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-                ARCH_NAME="arm64-v8a"
+                ARCH_NAME="aarch64"
               else
-                ARCH_NAME="x86_64"
+                ARCH_NAME="amd64"
               fi
               src=build/bin/eden-room
               dst=artifacts/"eden-linux-room-v${SHORT_SHA}-${ARCH_NAME}"

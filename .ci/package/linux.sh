@@ -32,8 +32,8 @@ COMPILER_NAME="${COMPILER:-gcc}"
 TARGET_NAME="${PGO_TARGET:-standard}"
 
 case "$TARGET" in
-	aarch64|arm64) ARCH_NAME="arm64-v8a" ;;
-	*) ARCH_NAME="x86_64" ;;
+	aarch64|arm64) ARCH_NAME="aarch64" ;;
+	*) ARCH_NAME="amd64" ;;
 esac
 
 if [ "$TARGET_NAME" = "pgo" ]; then

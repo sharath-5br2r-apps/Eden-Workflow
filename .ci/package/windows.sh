@@ -78,12 +78,12 @@ fi
 SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
 
 case "$TARGET" in
-	arm64|aarch64) ARCH_NAME="arm64-v8a" ;;
-	amd64|x86_64) ARCH_NAME="x86_64" ;;
+	arm64|aarch64) ARCH_NAME="aarch64" ;;
+	amd64|x86_64) ARCH_NAME="amd64" ;;
 	*)
 		case "$ARCH" in
-			*arm64*|*aarch64*) ARCH_NAME="arm64-v8a" ;;
-			*) ARCH_NAME="x86_64" ;;
+			*arm64*|*aarch64*) ARCH_NAME="aarch64" ;;
+			*) ARCH_NAME="amd64" ;;
 		esac
 		;;
 esac

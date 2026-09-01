@@ -99,11 +99,11 @@ jobs:
                   continue
               filename = os.path.basename(art)
               ext = filename.split(".")[-1] if "." in filename else "bin"
-              arch = "universal"
-              if "arm64" in filename.lower():
-                  arch = "arm64-v8a"
+              is_apk = ext.lower() in ["apk", "apks", "xapk", "apkm"] or "android" in filename.lower()
+              if "aarch64" in filename.lower() or "arm64" in filename.lower():
+                  arch = "arm64-v8a" if is_apk else "aarch64"
               elif "x86_64" in filename.lower() or "amd64" in filename.lower():
-                  arch = "x86_64"
+                  arch = "x86_64" if is_apk else "amd64"
 
               min_sdk = "24"
               native_libraries = []
