@@ -185,7 +185,7 @@ jobs:
           archive: false
 
   trigger_cleanup:
-    needs: [release_gh]
-    if: ${{ needs.release_gh.result == 'success' }}
+    needs: [release]
+    if: ${{ needs.release.result == 'success' }}
     uses: ./.github/workflows/cleanup.yml
     secrets: inherit
