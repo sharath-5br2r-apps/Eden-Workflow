@@ -1,4 +1,5 @@
-name: "[Auto] Tagged Release"
+name: "[Auto] Release tag build"
+permissions: write-all
 
 on:
   repository_dispatch:

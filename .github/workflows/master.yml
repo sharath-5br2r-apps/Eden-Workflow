@@ -1,4 +1,5 @@
 name: "[Auto] Master push"
+permissions: write-all
 
 on:
   repository_dispatch:

@@ -1,4 +1,5 @@
 name: "[Auto] Forgejo Pull Request"
+permissions: write-all
 
 on:
   schedule:

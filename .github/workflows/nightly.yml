@@ -1,4 +1,5 @@
 name: "[Auto] Nightly Builds"
+permissions: write-all
 
 on:
   workflow_dispatch:
