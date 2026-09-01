@@ -183,3 +183,9 @@ jobs:
           name: changelog
           path: changelog.md
           archive: false
+
+  trigger_cleanup:
+    needs: [release_gh]
+    if: ${{ !cancelled() }}
+    uses: ./.github/workflows/cleanup.yml
+    secrets: inherit
