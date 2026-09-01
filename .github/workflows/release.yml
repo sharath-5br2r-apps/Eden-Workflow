@@ -139,6 +139,14 @@ jobs:
                       except Exception as e:
                           print(f"zip inspection failed: {e}")
 
+                  if not native_libraries:
+                      if "x86_64" in filename.lower() or "chromeos" in filename.lower():
+                          native_libraries = ["x86_64"]
+                      elif "arm64" in filename.lower() or "aarch64" in filename.lower() or "v8a" in filename.lower():
+                          native_libraries = ["arm64-v8a"]
+                      else:
+                          native_libraries = ["arm64-v8a", "x86_64"]
+
               entry_key = filename.lower()
               meta_item = {
                   "name": filename,
