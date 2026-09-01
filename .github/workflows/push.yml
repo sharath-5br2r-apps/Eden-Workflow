@@ -1,5 +1,7 @@
 name: "[Manual] Master branch test"
 
+permissions: write-all
+
 on:
   workflow_dispatch:
 
