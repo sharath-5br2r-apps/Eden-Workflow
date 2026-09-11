@@ -147,12 +147,28 @@ jobs:
                       else:
                           native_libraries = ["arm64-v8a", "x86_64"]
 
+              def detect_os(text):
+                  clean = (text or "").lower()
+                  if "termux" in clean:
+                      return "termux"
+                  if any(x in clean for x in ["macos", "mac", "darwin", "osx", ".dmg", ".pkg"]):
+                      return "macos"
+                  if any(x in clean for x in ["windows", "win", ".exe", ".msi"]):
+                      return "windows"
+                  if any(x in clean for x in ["linux", "ubuntu", "debian", ".appimage", ".deb", ".rpm"]):
+                      return "linux"
+                  if "android" in clean or any(clean.endswith(e) for e in [".apk", ".apks", ".apkm", ".xapk", ".zip"]):
+                      return "android"
+                  return "android"
+
               entry_key = filename.lower()
               meta_item = {
                   "name": filename,
                   "arch": arch,
                   "ext": ext,
                   "version": os.environ.get("GITHUB_TAG", "latest"),
+                  "os": detect_os(filename),
+                  "isVanilla": True,
                   "patches": "eden-emulator",
                   "changelog": changelog,
                   "applied_patches": []
