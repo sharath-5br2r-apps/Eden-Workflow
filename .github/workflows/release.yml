@@ -167,6 +167,7 @@ jobs:
                   "name": filename,
                   "arch": arch,
                   "ext": asset_ext,
+                  "os": detect_os(filename),
                   "appliedPatches": [],
                   "skippedPatches": [],
                   "failedPatches": []
