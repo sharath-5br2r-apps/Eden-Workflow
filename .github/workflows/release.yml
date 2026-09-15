@@ -150,16 +150,16 @@ jobs:
               def detect_os(text):
                   clean = (text or "").lower()
                   if "termux" in clean:
-                      return "termux"
+                      return "Termux"
                   if any(x in clean for x in ["macos", "mac", "darwin", "osx", ".dmg", ".pkg"]):
-                      return "macos"
+                      return "macOS"
                   if any(x in clean for x in ["windows", "win", ".exe", ".msi"]):
-                      return "windows"
+                      return "Windows"
                   if any(x in clean for x in ["linux", "ubuntu", "debian", ".appimage", ".deb", ".rpm"]):
-                      return "linux"
+                      return "Linux"
                   if "android" in clean or any(clean.endswith(e) for e in [".apk", ".apks", ".apkm", ".xapk", ".zip"]):
-                      return "android"
-                  return "android"
+                      return "Android"
+                  return "Android"
 
               entry_key = filename.lower()
               asset_ext = f".{ext.lstrip('.')}" if ext else ""
