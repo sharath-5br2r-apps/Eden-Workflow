@@ -162,24 +162,29 @@ jobs:
                   return "android"
 
               entry_key = filename.lower()
-              meta_item = {
+              asset_ext = f".{ext.lstrip('.')}" if ext else ""
+              asset_obj = {
                   "name": filename,
                   "arch": arch,
-                  "ext": ext,
+                  "ext": asset_ext,
+                  "appliedPatches": [],
+                  "skippedPatches": [],
+                  "failedPatches": []
+              }
+              if ext.lower() in ["apk", "apks", "xapk", "apkm"]:
+                  asset_obj["min_sdk"] = min_sdk
+                  asset_obj["densities"] = densities
+                  asset_obj["native_libraries"] = native_libraries
+
+              meta_item = {
+                  "name": filename,
                   "version": os.environ.get("GITHUB_TAG", "latest"),
                   "os": detect_os(filename),
                   "isVanilla": True,
                   "patches": "eden-emulator",
                   "changelog": changelog,
-                  "applied_patches": [],
-                  "removed_patches": []
+                  "assets": [asset_obj]
               }
-              if ext.lower() in ["apk", "apks", "xapk", "apkm"]:
-                  meta_item["min_sdk"] = min_sdk
-                  meta_item["dpi"] = "nodpi"
-                  meta_item["densities"] = densities
-                  meta_item["native_libraries"] = native_libraries
-
               build_json[entry_key] = meta_item
 
           with open("build.json", "w") as f:
