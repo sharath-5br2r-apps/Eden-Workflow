@@ -157,17 +157,54 @@ jobs:
                       return "Windows"
                   if any(x in clean for x in ["linux", "ubuntu", "debian", ".appimage", ".deb", ".rpm"]):
                       return "Linux"
-                  if "android" in clean or any(clean.endswith(e) for e in [".apk", ".apks", ".apkm", ".xapk", ".zip"]):
-                      return "Android"
-                  return "Android"
+              file_os = detect_os(filename)
 
-              entry_key = filename.lower()
+              # Determine variant: standard, pgo, optimised, legacy, chromeos
+              clean_name = filename.lower()
+              variant = ""
+              if "chromeos" in clean_name:
+                  variant = "chromeos"
+              elif "legacy" in clean_name:
+                  variant = "legacy"
+              elif "pgo" in clean_name:
+                  variant = "pgo"
+              elif "optimised" in clean_name or "optimized" in clean_name:
+                  variant = "optimised"
+              elif "standard" in clean_name:
+                  variant = "standard"
+              else:
+                  variant = "standard"
+
+              # Determine sub_variant: gcc, msvc, clang
+              sub_variant = ""
+              if "msvc" in clean_name:
+                  sub_variant = "msvc"
+              elif "clang" in clean_name:
+                  sub_variant = "clang"
+              elif "gcc" in clean_name:
+                  sub_variant = "gcc"
+
+              # Brand is empty string for none
+              brand = ""
+
+              # Combo key for name-brand-variant-subvariant grouping
+              combo_parts = ["eden"]
+              if brand:
+                  combo_parts.append(brand)
+              if variant and variant != "standard":
+                  combo_parts.append(variant)
+              elif not brand and (not variant or variant == "standard") and not sub_variant:
+                  combo_parts.append("standard")
+              if sub_variant:
+                  combo_parts.append(sub_variant)
+              combo_key = "-".join(combo_parts).lower()
+
               asset_ext = f".{ext.lstrip('.')}" if ext else ""
               asset_obj = {
                   "name": filename,
                   "arch": arch,
                   "ext": asset_ext,
-                  "os": detect_os(filename),
+                  "os": file_os,
                   "appliedPatches": [],
                   "skippedPatches": [],
                   "failedPatches": []
@@ -177,16 +214,23 @@ jobs:
                   asset_obj["densities"] = densities
                   asset_obj["native_libraries"] = native_libraries
 
-              meta_item = {
-                  "name": filename,
-                  "version": os.environ.get("GITHUB_TAG", "latest"),
-                  "os": detect_os(filename),
-                  "isVanilla": True,
-                  "patches": "eden-emulator",
-                  "changelog": changelog,
-                  "assets": [asset_obj]
-              }
-              build_json[entry_key] = meta_item
+              if combo_key in build_json:
+                  # Filter out existing asset with same name if any, then append
+                  build_json[combo_key]["assets"] = [a for a in build_json[combo_key]["assets"] if a.get("name") != filename] + [asset_obj]
+              else:
+                  build_json[combo_key] = {
+                      "name": combo_key,
+                      "version": os.environ.get("GITHUB_TAG", "latest"),
+                      "os": file_os,
+                      "isVanilla": True,
+                      "patches": "eden-emulator",
+                      "changelog": changelog,
+                      "display_name": "Eden",
+                      "brand": brand,
+                      "variant": variant,
+                      "sub_variant": sub_variant,
+                      "assets": [asset_obj]
+                  }
 
           with open("build.json", "w") as f:
               json.dump(build_json, f, indent=2)
