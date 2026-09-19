@@ -13,11 +13,10 @@ flavor() {
 }
 
 flavors="standard"
-pgo="standard"
+pgo="standard pgo"
 
 if use_extra; then
-	flavors="standard legacy optimized"
-	# pgo="standard pgo"
+	flavors="standard legacy optimized chromeos"
 fi
 
 printf '['

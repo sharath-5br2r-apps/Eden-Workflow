@@ -149,7 +149,7 @@ esac
 name="$name-v${SHORT_SHA}"
 
 if [ "$PGO_TARGET" = "pgo" ]; then
-	name="${PROJECT_PRETTYNAME}-android-clang-pgo-v${SHORT_SHA}"
+	name="${PROJECT_PRETTYNAME}-android-${FLAVOR_LOWER}-clang-pgo-v${SHORT_SHA}"
 fi
 
 mv ./*.apk "$name.apk"
