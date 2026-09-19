@@ -135,7 +135,6 @@ jobs:
     with:
       devel: false
       build-id: 'pull_request'
-      payload: ${{ needs.check.outputs.payload }}
     secrets: inherit
 
   release:
