@@ -53,10 +53,12 @@ jobs:
           FORGEJO_PR_NUMBER: ${{ inputs['pr-number'] }}
         run: |
           if [ -n "$FORGEJO_PR_NUMBER" ]; then
-            curl -fsSL -H "Authorization: token $FORGEJO_TOKEN" \
-              "https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/pulls/$FORGEJO_PR_NUMBER" |
-              jq --arg host "git.eden-emu.dev" --arg repo "eden-emu/eden" \
-                '{host: $host, repository: $repo, clone_url: "https://git.eden-emu.dev/eden-emu/eden.git", branch: (.base.ref // "master"), ref: (.merge_commit_sha // .base.sha), number: .number, url: .html_url}' > ./payload.json
+            PR_JSON=$(curl -fsSL -H "Authorization: token $FORGEJO_TOKEN" \
+              "https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/pulls/$FORGEJO_PR_NUMBER")
+            MASTER_REF=$(curl -fsSL -H "Authorization: token $FORGEJO_TOKEN" \
+              "https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/branches/master" | jq -r '.commit.id')
+            printf '%s' "$PR_JSON" | jq --arg host "git.eden-emu.dev" --arg repo "eden-emu/eden" --arg ref "$MASTER_REF" \
+              '{host: $host, repository: $repo, clone_url: "https://git.eden-emu.dev/eden-emu/eden.git", branch: "master", ref: $ref, number: .number, url: .html_url}' > ./payload.json
           elif [ -n "$FORGEJO_PAYLOAD" ]; then
             printf '%s\n' "$FORGEJO_PAYLOAD" > ./payload.json
           else
