@@ -41,11 +41,11 @@ def main():
     for path in sorted(artifacts.iterdir()):
         if not path.is_file() or path.name == "build.json": continue
         os_name, ext, arch, variant, sub, apk = info(path.name); data = apk_data(path) if apk else {}
-        files[path.name] = {"name": "eden", "version": version, "appKey": "eden", "appName": "Eden", "arch": arch,
+        files[path.name] = {k: v for k, v in {"name": "eden", "version": version, "appKey": "eden", "appName": "Eden", "arch": arch,
             "fileType": "APK" if apk else ext.lstrip(".").upper(), "brandKey": None, "brandName": None,
             "variant": variant, "subVariant": sub, "packageName": ("dev.legacy.eden_emulator" if "legacy" in path.name.lower() else "com.miHoYo.Yuanshen" if any(x in path.name.lower() for x in ("optimized", "optimised", "genshin")) else "dev.eden.eden_emulator") if apk else None,
             "patchSources": [], "changelogs": [], "appliedPatches": [], "densities": data.get("densities", []), "nativeLibraries": data.get("nativeLibraries", []),
-            "minSdk": data.get("minSdk"), "versionCode": data.get("versionCode"), "originBuild": version, "publishedAt": now}
+            "minSdk": data.get("minSdk"), "versionCode": data.get("versionCode"), "originBuild": version, "publishedAt": now}.items() if v is not None and v != []}
     manifest = {"schema": 1, "kind": "build", "meta": {"build": version, "channel": channel, "publishedAt": now}, "files": files}
     Path("build.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
     (artifacts / "build.json").write_text(Path("build.json").read_text())
