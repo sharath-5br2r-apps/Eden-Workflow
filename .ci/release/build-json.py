@@ -36,7 +36,9 @@ def main():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     channel = "beta" if os.environ.get("IS_PRERELEASE", "false").lower() == "true" else "stable"
     files = {}
-    for path in sorted(Path("artifacts").iterdir()):
+    artifacts = Path("artifacts")
+    artifacts.mkdir(parents=True, exist_ok=True)
+    for path in sorted(artifacts.iterdir()):
         if not path.is_file() or path.name == "build.json": continue
         os_name, ext, arch, variant, sub, apk = info(path.name); data = apk_data(path) if apk else {}
         files[path.name] = {"name": "eden", "version": version, "appKey": "eden", "appName": "Eden", "arch": arch,
@@ -46,6 +48,6 @@ def main():
             "minSdk": data.get("minSdk"), "versionCode": data.get("versionCode"), "originBuild": version, "publishedAt": now}
     manifest = {"schema": 1, "kind": "build", "meta": {"build": version, "channel": channel, "publishedAt": now}, "files": files}
     Path("build.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
-    Path("artifacts/build.json").write_text(Path("build.json").read_text())
+    (artifacts / "build.json").write_text(Path("build.json").read_text())
 
 if __name__ == "__main__": main()

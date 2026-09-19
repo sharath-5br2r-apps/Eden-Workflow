@@ -86,7 +86,7 @@ jobs:
         run: ./.ci/release.sh
 
       - name: Generate build.json
-        if: ${{ always() && inputs.status == 'success' }}
+        if: ${{ always() }}
         run: |
           python3 -c '
           import os, json, glob, subprocess, zipfile, re
@@ -238,12 +238,12 @@ jobs:
           cp build.json artifacts/build.json || true
 
       - name: Normalize build.json using release metadata schema
-        if: ${{ always() && inputs.status == 'success' }}
+        if: ${{ always() }}
         run: python3 .ci/release/build-json.py
 
       - name: Release to GitHub Repository
         id: release_gh
-        if: ${{ always() && inputs.status == 'success' }}
+        if: ${{ always() }}
         uses: softprops/action-gh-release@v2.5.0
         with:
           name: "${{ env.GITHUB_TITLE }}"
