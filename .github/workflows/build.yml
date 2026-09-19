@@ -16,6 +16,11 @@ on:
         type: string
         required: false
         default: ''
+      pr-number:
+        description: 'Forgejo pull request number'
+        type: string
+        required: false
+        default: ''
 
 env:
   DISABLE_ARM: ${{ vars.DISABLE_ARM }}
@@ -45,8 +50,14 @@ jobs:
       - name: Parse Forgejo payload
         env:
           FORGEJO_PAYLOAD: ${{ inputs.payload }}
+          FORGEJO_PR_NUMBER: ${{ inputs['pr-number'] }}
         run: |
-          if [ -n "$FORGEJO_PAYLOAD" ]; then
+          if [ -n "$FORGEJO_PR_NUMBER" ]; then
+            curl -fsSL -H "Authorization: token $FORGEJO_TOKEN" \
+              "https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/pulls/$FORGEJO_PR_NUMBER" |
+              jq --arg host "git.eden-emu.dev" --arg repo "eden-emu/eden" \
+                '{host: $host, repository: $repo, clone_url: (.head.repo.clone_url // "https://git.eden-emu.dev/eden-emu/eden.git"), branch: .head.ref, ref: .head.sha, number: .number, url: .html_url}' > ./payload.json
+          elif [ -n "$FORGEJO_PAYLOAD" ]; then
             printf '%s\n' "$FORGEJO_PAYLOAD" > ./payload.json
           else
             echo '${{ toJSON(github.event.client_payload) }}' > ./payload.json
