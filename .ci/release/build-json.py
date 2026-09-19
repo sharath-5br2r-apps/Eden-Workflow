@@ -1,97 +1,51 @@
 #!/usr/bin/env python3
-"""Generate release metadata using the write_build_info-style asset schema."""
-import json
-import os
-import re
-import shutil
-import subprocess
+import json, os, re, shutil, subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
-
-def apk_metadata(path, arch):
-    data = {"min_sdk": "", "version_code": "", "densities": [], "native_libraries": []}
+def apk_data(path):
+    out = {"minSdk": None, "versionCode": None, "densities": [], "nativeLibraries": []}
     tool = shutil.which("aapt2") or shutil.which("aapt")
-    if not tool:
-        return data
-    try:
-        output = subprocess.run([tool, "dump", "badging", str(path)], capture_output=True,
-                                text=True, check=False).stdout
-    except OSError:
-        return data
-    match = re.search(r"(?:sdkVersion|minSdkVersion):'([^']+)'", output)
-    if match:
-        data["min_sdk"] = match.group(1)
-    match = re.search(r"versionCode='([^']+)'", output)
-    if match:
-        data["version_code"] = match.group(1)
-    match = re.search(r"densities: '([^']+)'", output)
-    if match:
-        data["densities"] = match.group(1).split()
-    match = re.search(r"native-code: '([^']+)'", output)
-    if match:
-        data["native_libraries"] = match.group(1).split()
-    return data
+    if not tool: return out
+    text = subprocess.run([tool, "dump", "badging", str(path)], capture_output=True, text=True).stdout
+    patterns = {"minSdk": r"(?:sdkVersion|minSdkVersion):'([^']+)'", "versionCode": r"versionCode='([^']+)'",
+                "densities": r"densities: '([^']+)'", "nativeLibraries": r"native-code: '([^']+)'"}
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text)
+        if match: out[key] = match.group(1).split() if key.endswith("s") else match.group(1)
+    return out
 
-
-def metadata(name):
-    lower = name.lower()
-    if "android" in lower or lower.endswith((".apk", ".apks", ".xapk", ".apkm")):
-        os_name, ext = "Android", Path(name).suffix
-        arch = "x86_64" if "chromeos" in lower or "x86_64" in lower else "arm64-v8a"
-    elif any(x in lower for x in ("windows", ".zip", ".exe")):
-        os_name, ext = "Windows", Path(name).suffix
-        arch = "arm64" if "arm64" in lower or "aarch64" in lower else "amd64"
-    elif any(x in lower for x in ("macos", ".dmg")):
-        os_name, ext, arch = "macOS", Path(name).suffix, "universal"
+def info(name):
+    lower = name.lower(); ext = Path(name).suffix
+    apk = ext.lower() in (".apk", ".apks", ".xapk", ".apkm")
+    if apk:
+        os_name, arch = "Android", "x86_64" if "chromeos" in lower or "x86_64" in lower else "arm64-v8a"
+        variant = "legacy" if "legacy" in lower else "optimized" if any(x in lower for x in ("optimized", "optimised", "genshin")) else "chromeos" if "chromeos" in lower else None
+        sub = None
+    elif "windows" in lower or ext.lower() in (".zip", ".exe"):
+        os_name, arch = "Windows", "aarch64" if any(x in lower for x in ("arm64", "aarch64")) else "amd64"
+        variant, sub = None, "msvc" if "msvc" in lower else "clang-pgo" if "pgo" in lower else "gcc"
+    elif "macos" in lower or ext.lower() in (".dmg", ".pkg"):
+        os_name, arch, variant, sub = "macOS", "universal", None, None
     else:
-        os_name, ext = "Linux", Path(name).suffix
-        arch = "aarch64" if "aarch64" in lower or "arm64" in lower else "amd64"
-    if "pgo" in lower:
-        variant, sub = "standard", "clang-pgo"
-    else:
-        variant = next((v for v in ("chromeos", "legacy", "optimized", "optimised") if v in lower), "standard")
-        sub = "msvc" if "msvc" in lower else "clang" if "clang" in lower else "gcc" if "gcc" in lower else ""
-    return os_name, ext, arch, variant, sub
-
-
-def android_package(name):
-    lower = name.lower()
-    if "legacy" in lower:
-        return "dev.legacy.eden_emulator"
-    if "optimized" in lower or "optimised" in lower or "genshin" in lower:
-        return "com.miHoYo.Yuanshen"
-    return "dev.eden.eden_emulator"
-
+        os_name, arch, variant, sub = "Linux", "aarch64" if "aarch64" in lower or "arm64" in lower else "amd64", None, "clang-pgo" if "pgo" in lower else "gcc"
+    return os_name, ext, arch, variant, sub, apk
 
 def main():
-    changelog = Path("changelog.md").read_text() if Path("changelog.md").exists() else ""
-    result = {}
+    version = os.environ.get("GITHUB_TAG") or os.environ.get("ARTIFACT_REF", "latest")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    channel = "beta" if os.environ.get("IS_PRERELEASE", "false").lower() == "true" else "stable"
+    files = {}
     for path in sorted(Path("artifacts").iterdir()):
-        if not path.is_file() or path.name == "build.json":
-            continue
-        os_name, ext, arch, variant, sub = metadata(path.name)
-        key = "eden" + (f"-{variant}" if variant != "standard" else "") + (f"-{sub}" if sub else "")
-        asset = {"name": path.name, "arch": arch, "ext": ext, "os": os_name,
-                 "appliedPatches": [], "skippedPatches": [], "failedPatches": []}
-        if ext.lower() in (".apk", ".apks", ".xapk", ".apkm"):
-            asset.update(apk_metadata(path, arch))
-            asset["package_name"] = android_package(path.name)
-            if asset["native_libraries"] == []:
-                asset.pop("native_libraries")
-            for field in ("min_sdk", "version_code", "densities"):
-                if not asset[field]:
-                    asset.pop(field)
-        entry = result.setdefault(key, {"name": key, "version": os.environ.get("GITHUB_TAG", "latest"),
-            "cli": "", "patches": "eden-emulator", "changelog": changelog,
-            "changelog_urls": [], "changelogs": [],
-            "package_name": android_package(path.name) if os_name == "Android" else "",
-            "display_name": "Eden", "patches_source": "", "engine_brand": "",
-            "patch_brand": "", "variant": variant, "sub_variant": sub, "assets": []})
-        entry["assets"] = [a for a in entry["assets"] if a["name"] != path.name]
-        entry["assets"].append(asset)
-    Path("build.json").write_text(json.dumps(result, indent=2) + "\n")
+        if not path.is_file() or path.name == "build.json": continue
+        os_name, ext, arch, variant, sub, apk = info(path.name); data = apk_data(path) if apk else {}
+        files[path.name] = {"name": "eden", "version": version, "appKey": "eden", "appName": "Eden", "arch": arch,
+            "fileType": "APK" if apk else ext.lstrip(".").upper(), "brandKey": None, "brandName": None,
+            "variant": variant, "subVariant": sub, "packageName": ("dev.legacy.eden_emulator" if "legacy" in path.name.lower() else "com.miHoYo.Yuanshen" if any(x in path.name.lower() for x in ("optimized", "optimised", "genshin")) else "dev.eden.eden_emulator") if apk else None,
+            "patchSources": [], "changelogs": [], "appliedPatches": [], "densities": data.get("densities", []), "nativeLibraries": data.get("nativeLibraries", []),
+            "minSdk": data.get("minSdk"), "versionCode": data.get("versionCode"), "originBuild": version, "publishedAt": now}
+    manifest = {"schema": 1, "kind": "build", "meta": {"build": version, "channel": channel, "publishedAt": now}, "files": files}
+    Path("build.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
     Path("artifacts/build.json").write_text(Path("build.json").read_text())
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
