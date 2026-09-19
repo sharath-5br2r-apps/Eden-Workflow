@@ -27,6 +27,8 @@ env:
   BUILD_ID: ${{ inputs.build-id }}
   TEMP_PATCH_NUMBER: ""
   FORCE_PGO: "false"
+  DISABLE_PGO: ${{ inputs.build-id == 'pull_request' && 'true' || 'false' }}
+  DISABLE_AMD: ${{ inputs.build-id == 'pull_request' && 'true' || 'false' }}
 
 jobs:
   clone:
@@ -34,7 +36,7 @@ jobs:
       cachever: ${{ steps.out.outputs.cachever }}
       pgo: ${{ steps.out.outputs.pgo }}
     name: Parse and Clone
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
