@@ -9,11 +9,11 @@ ROOTDIR="$PWD"
 . ./.ci/build/project.sh
 
 opts() {
-	falsy "$DISABLE_OPTS" && falsy "$DISABLE_PGO"
+	falsy "$DISABLE_OPTS"
 }
 
-use_amd() {
-	falsy "$DISABLE_AMD" && { tagged || truthy "${FORCE_PGO}"; }
+pgo() {
+	true
 }
 
 devel=true
@@ -35,7 +35,6 @@ pull_request)
 	echo
 	echo "## Changelog"
 	python3 .ci/field.py field="body" default_msg="No changelog provided" pull_request_number="$FORGEJO_PR_NUMBER"
-	devel=false
 	;;
 tag)
 	echo "## Changelog"
@@ -57,19 +56,21 @@ push | test)
 esac
 echo
 
-SHORT_SHA=$(echo "${FORGEJO_REF:-${GITHUB_SHA:-head}}" | cut -c1-10)
-
 tagged() {
 	falsy "$devel"
 }
 
 # create a link
 # $1: the label
-# $2: the artifact filename
+# $2: the artifact suffix (e.g. PROJECT-Linux-amd64... would just pass in Linux-amd64...)
+# $3: optional prefix (defaults to PROJECT_PRETTYNAME)
 file_link() {
 	label="$1"
-	filename="$2"
-	url="./$filename"
+	artifact="$2"
+	prefix="${3:-$PROJECT_PRETTYNAME}"
+
+	# TODO(crueter): Make this detect gh/b2
+	url="https://$B2_PUBLIC_URL/$GITHUB_TAG/$prefix-$artifact"
 
 	printf "[%s](%s)" "$label" "$url"
 }
@@ -81,46 +82,42 @@ android() {
 	flavor="$2"
 	notes="$3"
 
-	if [ "$flavor" = "chromeos" ]; then
-		arch="x86_64"
-	else
-		arch="arm64-v8a"
+	printf "| %s | " "$type"
+	file_link "$type APK" "Android-${ARTIFACT_REF}-${flavor}.apk"
+
+	printf " | "
+	if pgo; then
+		file_link "$type APK (PGO)" "Android-${ARTIFACT_REF}-${flavor}-pgo.apk"
 	fi
 
-	filename="eden-android-${flavor}-v${SHORT_SHA}-${arch}.apk"
-	printf "| "
-	file_link "$type" "$filename"
 	echo " | $notes |"
 }
 
+android_matrix() {
+	android "Standard" "standard" "The standard build. Most users should use this."
+
+	android "Genshin Spoof" "optimized" "Spoofs Eden as Genshin Impact, which may enable optimizations/frame generation on some flagship devices."
+	android "Legacy" "legacy" "For Snapdragon 865 and other unsupported chipsets"
+
+}
+
 linux_field() {
-	target="$1"
+	arch="$1"
 	pretty_arch="$2"
 	notes="${3}"
 
-	if [ "$target" = "aarch64" ] || [ "$target" = "arm64" ]; then
-		arch="aarch64"
-		var="standard-gcc"
-	elif [ "$target" = "amd64" ] || [ "$target" = "x86_64" ]; then
-		arch="amd64"
-		var="standard-gcc"
-	else
-		arch="amd64"
-		var="${target}-gcc"
-	fi
-
 	printf "| %s | " "$pretty_arch"
-	file_link "Standard AppImage" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage"
+	file_link "Standard AppImage" "Linux-${ARTIFACT_REF}-${arch}-gcc-standard.AppImage"
 
-	if opts; then
+	if true; then
 		printf " ("
-		file_link "zsync" "eden-linux-${var}-v${SHORT_SHA}-${arch}.AppImage.zsync"
+		file_link "zsync" "Linux-${arch}-gcc-standard.AppImage.zsync"
 		printf ") | "
 
-		if [ "$target" = "amd64" ] || [ "$target" = "x86_64" ] || [ "$target" = "aarch64" ] || [ "$target" = "arm64" ]; then
-			file_link "PGO AppImage" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage"
+		if true; then
+			file_link "PGO AppImage" "Linux-${ARTIFACT_REF}-${arch}-clang-pgo.AppImage"
 			printf " ("
-			file_link "zsync" "eden-linux-pgo-clang-v${SHORT_SHA}-${arch}.AppImage.zsync"
+			file_link "zsync" "Linux-${arch}-clang-pgo.AppImage.zsync"
 			printf ")"
 		fi
 	fi
@@ -129,25 +126,20 @@ linux_field() {
 }
 
 linux_matrix() {
-	linux_field amd64 "amd64"
-	if use_amd && opts; then
-		linux_field legacy "Legacy amd64" "Pre-Ryzen or Haswell CPUs (expect sadness)"
-		linux_field steamdeck "Steam Deck" "Zen 2"
-		linux_field rog-ally "Zen 4" "Zen 4 (AMD Z1/Z2, ROG Ally X, Legion Go S)"
-	fi
-
-	falsy "$DISABLE_ARM" && linux_field aarch64 "ARM (aarch64)"
+	linux_field amd64 "x86_64 v3"
+	linux_field aarch64 "ARM (aarch64)"
 }
 
 room_matrix() {
-	echo "- $(file_link "amd64" "eden-linux-room-v${SHORT_SHA}-amd64")"
-	falsy "$DISABLE_ARM" && echo "- $(file_link "aarch64" "eden-linux-room-v${SHORT_SHA}-aarch64")"
+	for arch in aarch64 x86_64; do
+		echo "- $(file_link "$arch" "room-${arch}-unknown-linux-musl" "eden")"
+	done
 }
 
 msvc_field() {
-	printf "| amd64 (MSVC) | "
-	file_link "MSVC zip" "eden-windows-standard-msvc-v${SHORT_SHA}-amd64.zip"
-	if opts; then
+	printf "| amd64/x86_64 (MSVC) | "
+	file_link "MSVC zip" "Windows-${ARTIFACT_REF}-amd64-msvc-standard.zip"
+	if pgo; then
 		printf " | "
 	fi
 
@@ -155,43 +147,30 @@ msvc_field() {
 }
 
 win_field() {
-	target="$1"
+	arch="$1"
 	pretty_arch="$2"
 	notes="$3"
 
-	if [ "$target" = "arm64" ] || [ "$target" = "aarch64" ]; then
-		arch="aarch64"
-		var="standard-clang"
-	elif [ "$target" = "amd64" ] || [ "$target" = "x86_64" ]; then
-		arch="amd64"
-		var="standard-gcc"
+	if [ "$arch" = arm64 ]; then
+		compiler=clang
 	else
-		arch="amd64"
-		var="${target}-gcc"
+		compiler=gcc
 	fi
 
 	printf "| %s | " "$pretty_arch"
-	file_link "Standard zip" "eden-windows-${var}-v${SHORT_SHA}-${arch}.zip"
+	file_link "Standard zip" "Windows-${ARTIFACT_REF}-${arch}-${compiler}-standard.zip"
 	printf " | "
 
-	if opts; then
-		if [ "$target" = "amd64" ] || [ "$target" = "x86_64" ] || [ "$target" = "arm64" ] || [ "$target" = "aarch64" ]; then
-			file_link "PGO zip" "eden-windows-pgo-clang-v${SHORT_SHA}-${arch}.zip"
-		fi
+	if pgo; then
+		file_link "PGO zip" "Windows-${ARTIFACT_REF}-${arch}-clang-pgo.zip"
 	fi
 
 	echo " | $notes |"
 }
 
 win_matrix() {
-	msvc_field
-	win_field amd64 "x86_64 v3" "Built with MinGW. Requires Ryzen, 4th gen Intel, or newer"
-
-	if use_amd; then
-		win_field rog-ally "Zen 4" "Requires Zen 4 or newer (e.g. ROG Ally X, Legion Go S). Incompatible with Intel"
-	fi
-
-	falsy "$DISABLE_ARM" && win_field arm64 "arm64-v8a" "Snapdragon devices"
+	win_field amd64 "x86_64 v3" "Standard x86_64-v3 build"
+	win_field arm64 "aarch64/arm64" "Snapdragon devices"
 }
 
 echo "# Packages"
@@ -203,8 +182,8 @@ if truthy "$EXPLAIN_TARGETS"; then
 
 		Each build is optimized for a specific architecture and uses a specific compiler.
 
-		- **arm64-v8a**: For devices that use the armv8-a instruction set; e.g. Snapdragon X, all Android devices, and Apple Silicon Macs.
-		- **x86_64**: For devices that use the x86_64 instruction set; this is exclusively used by Intel and AMD CPUs and is only found on desktops.
+		- **aarch64/arm64**: For devices that use the armv8-a instruction set; e.g. Snapdragon X, all Android devices, and Apple Silicon Macs.
+		- **amd64**: For devices that use the amd64 (aka x86_64) instruction set; this is exclusively used by Intel and AMD CPUs and is only found on desktops.
 		- **v3**: For devices that use the x86_64-v3 instruction set or newer; this is found on Ryzen, Intel 4th Generation (Haswell), and newer.
 
 		### PGO
@@ -220,7 +199,7 @@ cat <<EOF
 Linux packages are distributed via AppImage.
 EOF
 
-if opts && tagged; then
+if pgo; then
 	cat <<-EOF
 		[zsync](https://zsync.moria.org.uk/) files are provided for easier updating, such as via
 		[AM](https://github.com/ivan-hc/AM).
@@ -259,7 +238,7 @@ Windows packages are in-place zip files. Setup files are soon to come.
 
 EOF
 
-if opts && tagged; then
+if pgo; then
 	cat <<-EOF
 		| Build Type | Standard | PGO (Recommended) | Notes |
 		|------------|----------|-------------------|-------|
@@ -274,24 +253,27 @@ fi
 
 win_matrix
 
+cat <<-EOF
+
+	## Android
+
+EOF
+
 if falsy "$DISABLE_ANDROID"; then
-	cat <<-EOF
+	if pgo; then
+		cat <<-EOF
+			| Build Type | Standard | PGO (Recommended) | Notes |
+			|------------|----------|-------------------|-------|
+		EOF
+	else
+		cat <<-EOF
 
-		## Android
-
-		| Build  | Notes |
-		|--------|-------|
-	EOF
-
-	android "Standard APK" "standard" "The standard build. Most users should use this."
-
-	if tagged; then
-		android "Genshin Spoof APK" "optimized" "Spoofs Eden as Genshin Impact, which may enable optimizations/frame generation on some flagship devices."
-		android "Legacy APK" "legacy" "For Snapdragon 865 and other unsupported chipsets"
-		android "ChromeOS APK" "chromeos" "For Chromebooks and x86_64 Android devices"
-	elif [ "$1" = "pull_request" ] || [ "$BUILD_ID" = "pull_request" ]; then
-		android "ChromeOS APK" "chromeos" "For Chromebooks and x86_64 Android devices"
+			| Build Type |  | Notes |
+			|------------|--|-------|
+		EOF
 	fi
+
+	android_matrix
 fi
 
 cat <<EOF
@@ -304,21 +286,5 @@ In order to run the app, you *may* need to go to System Settings -> Privacy & Se
 EOF
 
 printf -- "- "
-file_link "macOS DMG" "eden-macos-v${SHORT_SHA}-universal.dmg"
+file_link "macOS DMG" "macOS-${ARTIFACT_REF}.dmg"
 echo
-
-if [ "$RELEASE_B2" = "true" ] && [ -n "$B2_PUBLIC_URL" ]; then
-	cat <<-EOF
-
-		## Torrent
-
-		A torrent containing all artifacts. To use this, simply download the torrent and import it into your
-		favorite torrent client (BitTorrent only!), and artifacts will be downloaded automatically.
-	EOF
-
-	printf -- "- "
-	file_link "Torrent" "${ARTIFACT_REF}.torrent"
-	echo
-	echo
-
-fi

@@ -37,11 +37,11 @@ case "$TARGET" in
 esac
 
 if [ "$TARGET_NAME" = "pgo" ]; then
-	VARIANT="pgo-${COMPILER_NAME}"
+	VARIANT="${COMPILER_NAME}-pgo"
 elif [ "$TARGET" = "legacy" ] || [ "$TARGET" = "steamdeck" ] || [ "$TARGET" = "rog-ally" ]; then
 	VARIANT="${TARGET}-${COMPILER_NAME}"
 else
-	VARIANT="standard-${COMPILER_NAME}"
+	VARIANT="$COMPILER_NAME"
 fi
 
 mkdir -p "$ARTIFACTS_DIR"

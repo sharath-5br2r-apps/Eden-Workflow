@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: Copyright 2025 Eden Emulator Project
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+brew update
 brew install --formula --quiet \
   autoconf \
   automake \
@@ -10,9 +11,7 @@ brew install --formula --quiet \
   Catch2 \
   cmake \
   create-dmg \
-  cubeb \
   enet \
-  fmt \
   glslang \
   hidapi \
   libtool \
@@ -20,7 +19,6 @@ brew install --formula --quiet \
   lld \
   llvm \
   lz4 \
-  mbedtls@3 \
   molten-vk \
   ninja \
   nlohmann-json \

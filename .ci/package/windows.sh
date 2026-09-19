@@ -106,7 +106,13 @@ else
 	TARGET_NAME="standard"
 fi
 
-VARIANT="${TARGET_NAME}-${COMPILER_NAME}"
+if [ "$TARGET_NAME" = "pgo" ]; then
+	VARIANT="${COMPILER_NAME}-pgo"
+elif [ "$COMPILER_NAME" = "msvc" ]; then
+	VARIANT="msvc"
+else
+	VARIANT="$COMPILER_NAME"
+fi
 ZIP_NAME="eden-windows-${VARIANT}-v${SHORT_SHA}-${ARCH_NAME}.zip"
 
 cp -r ./* "$TMP_DIR"/

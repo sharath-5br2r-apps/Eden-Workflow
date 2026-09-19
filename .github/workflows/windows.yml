@@ -34,7 +34,7 @@ env:
 jobs:
   set-matrix:
     name: "Generate Windows Matrices"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       msys: ${{ steps.msys.outputs.matrix }}
       msvc: ${{ steps.msvc.outputs.matrix }}
@@ -181,7 +181,10 @@ jobs:
         shell: bash
         run: |
           git config --global core.autocrlf off
-          dos2unix .patch/boost/*
+          if [ -d .patch/boost ]; then
+            dos2unix .patch/boost/*
+          fi
+
           ./.ci/build/configure.sh -DCCACHE_PATH=${SCCACHE_PATH}
 
       - name: Build
