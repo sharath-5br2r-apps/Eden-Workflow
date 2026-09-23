@@ -21,7 +21,7 @@ def info(name):
     if apk:
         os_name, arch = "Android", "x86_64" if "chromeos" in lower or "x86_64" in lower else "arm64-v8a"
         variant = "legacy" if "legacy" in lower else "optimized" if any(x in lower for x in ("optimized", "optimised", "genshin")) else "chromeos" if "chromeos" in lower else None
-        sub = "clang-pgo" if "pgo" in lower else None
+        sub = "pgo" if "pgo" in lower else None
     elif "windows" in lower or ext.lower() in (".zip", ".exe"):
         os_name, arch = "Windows", "aarch64" if any(x in lower for x in ("arm64", "aarch64")) else "amd64"
         variant, sub = None, "msvc" if "msvc" in lower else "clang-pgo" if "pgo" in lower else "gcc"
